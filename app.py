@@ -117,7 +117,8 @@ PROMPT_TEMPLATES = {
 # --- サイドバー（前半）：部屋の選択 ---
 with st.sidebar:
     st.title("🕯️ 密室管理パネル")
-    api_key = st.text_input("Gemini API Key", type="password")
+    default_key = st.secrets.get("GEMINI_API_KEY", "")
+    api_key = st.text_input("Gemini API Key", value=default_key, type="password")
     
     st.divider()
     st.subheader("📂 セーブデータの選択")
