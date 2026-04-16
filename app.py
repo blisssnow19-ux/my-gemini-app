@@ -83,11 +83,20 @@ doc_ref = db.collection("rooms").document(room_id)
 doc = doc_ref.get()
 
 if doc.exists:
-    st.session_state.messages = doc.to_dict().get("messages", [])
-    st.session_state.total_cost_jpy = doc.to_dict().get("total_cost", 0.0)
+    data = doc.to_dict()
+    st.session_state.messages = data.get("messages", [])
+    st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
+    # 🌟 クラウドから保存されたプロンプトを読み込む
+    saved_prompt = data.get("system_prompt", PROMPT_TEMPLATES[prompt_key])
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
+    saved_prompt = PROMPT_TEMPLATES[prompt_key]
+
+# サイドバーのテキストエリアの初期値を saved_prompt にする
+with st.sidebar:
+    # (中略)
+    current_system = st.text_area("システム指示の編集", value=saved_prompt, height=200)
 
 # --- メイン画面 ---
 st.info(f"現在の部屋: {room_id} | モード: {prompt_key}")
@@ -123,10 +132,11 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
         st.session_state.total_cost_jpy += cost
 
-        # 🌟 Firebaseへ自動保存（1億トークンへの備え）
+        # 🌟 Firebaseへ自動保存（プロンプトも追加！）
         doc_ref.set({
             "messages": st.session_state.messages,
             "total_cost": st.session_state.total_cost_jpy,
+            "system_prompt": current_system,  # 🌟 ここ！
             "last_update": datetime.datetime.now()
         })
         st.rerun()
