@@ -37,12 +37,11 @@ PROMPT_TEMPLATES = {
     "10": "ここに3つ目のシステム指示（膠着状態用など）を書く..."
 }
 
-# --- サイドバー ---
+# --- サイドバー（前半）：部屋の選択 ---
 with st.sidebar:
     st.title("🕯️ 密室管理パネル")
     api_key = st.text_input("Gemini API Key", type="password")
     
-    # 🌟 部屋名（これがセーブデータIDになります！）
     st.divider()
     st.subheader("📂 セーブデータの選択")
 
@@ -60,25 +59,11 @@ with st.sidebar:
     room_mode = st.radio("操作モード", ["既存の部屋に入る", "新しい部屋を作る（新章）"], horizontal=True)
 
     if room_mode == "既存の部屋に入る":
-        # プルダウンで選ぶだけ！記憶不要！
         room_id = st.selectbox("入室する部屋を選んでください", existing_rooms)
     else:
-        # 新しい部屋を作る時は名前を決める
         room_id = st.text_input("新しい部屋の名前（英数字おすすめ）", value=f"room_{len(existing_rooms)+1:02d}")
-    
-    st.divider()
-    st.subheader("📚 プロンプト選択")
-    prompt_key = st.selectbox("設定を選択", list(PROMPT_TEMPLATES.keys()))
-    current_system = st.text_area("システム指示の編集", value=PROMPT_TEMPLATES[prompt_key], height=200)
 
-    st.divider()
-    model_choice = st.selectbox("使用モデル", list(PRICING.keys()))
-    max_output = st.slider("応答の最大長さ", 100, 8000, 1000)
-    
-    if st.button("🔄 データをクラウドから再読み込み"):
-        st.rerun()
-
-# --- データの読み込み ---
+# --- データの読み込み（部屋が決まったのでクラウドからロード） ---
 doc_ref = db.collection("rooms").document(room_id)
 doc = doc_ref.get()
 
@@ -86,17 +71,30 @@ if doc.exists:
     data = doc.to_dict()
     st.session_state.messages = data.get("messages", [])
     st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
-    # 🌟 クラウドから保存されたプロンプトを読み込む
-    saved_prompt = data.get("system_prompt", PROMPT_TEMPLATES[prompt_key])
+    saved_prompt = data.get("system_prompt", "") # クラウドに保存されたプロンプト
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
-    saved_prompt = PROMPT_TEMPLATES[prompt_key]
+    saved_prompt = ""
 
-# サイドバーのテキストエリアの初期値を saved_prompt にする
+# --- サイドバー（後半）：プロンプトと設定 ---
 with st.sidebar:
-    # (中略)
-    current_system = st.text_area("システム指示の編集", value=saved_prompt, height=200)
+    st.divider()
+    st.subheader("📚 プロンプト選択")
+    prompt_key = st.selectbox("設定を選択", list(PROMPT_TEMPLATES.keys()))
+
+    # 初期値の決定：クラウドデータがあればそれを、無ければ選んだテンプレートを使用
+    display_prompt = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_key]
+
+    # 🌟 エラー解消！ここに1つだけテキストエリアを置く
+    current_system = st.text_area("システム指示の編集", value=display_prompt, height=200)
+
+    st.divider()
+    model_choice = st.selectbox("使用モデル", list(PRICING.keys()))
+    max_output = st.slider("応答の最大長さ", 100, 8000, 1000)
+    
+    if st.button("🔄 データをクラウドから再読み込み"):
+        st.rerun()
 
 # --- メイン画面 ---
 st.info(f"現在の部屋: {room_id} | モード: {prompt_key}")
