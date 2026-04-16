@@ -4,66 +4,61 @@ import json
 import datetime
 
 # --- 基本設定 ---
-st.set_page_config(page_title="執着密室管理室", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="執着密室：出張司令室", layout="wide")
 
-# 2026年4月現在の最新単価 (1Mトークンあたり/USD)
+# 2026年最新単価
 PRICING = {
     "gemini-3.1-pro-preview": {"in": 2.00, "out": 12.00},
-    "gemini-2.5-pro": {"in": 1.25, "out": 10.00},
-    "gemini-3-flash-preview": {"in": 0.50, "out": 3.00}
+    "gemini-2.5-pro": {"in": 1.25, "out": 10.00}
 }
-JPY_RATE = 150.0  # 1ドル150円換算
+JPY_RATE = 150.0
+
+# --- プロンプト・ライブラリ（10個まで増やせます） ---
+PROMPT_TEMPLATES = {
+    "密室：通常（サービス封印）": """# 【最重要：AIの「サービス精神」の完全放棄】
+ユーザーを喜ばせようとする「過剰な親切心」を禁じます。時間は数分単位で進め、膠着状態を維持せよ。""",
+    "密室：朝チュン（官能性重視）": """事後の残り香、熱っぽい視線、気まずい空気を重視。直接的な描写を避け、行間で語れ。""",
+    "密室：対立（中也vs太宰）": """二人の相容れない緊張感を最大化せよ。""",
+    "密室：膠着（沈黙と視線）": """言葉を極限まで減らし、視線の動き、微かな呼吸音だけで描写せよ。""",
+    # あと6個、ここに追加していけます
+}
 
 # セッション状態の初期化
 if "messages" not in st.session_state: st.session_state.messages = []
 if "total_cost_jpy" not in st.session_state: st.session_state.total_cost_jpy = 0.0
 
-# --- サイドバー設定 ---
+# --- サイドバー：設定 ---
 with st.sidebar:
     st.title("🕯️ 密室管理パネル")
-    api_key = st.text_input("Gemini API Key", type="password", help="Google AI Studioで発行したキーを入力")
-    
-    model_choice = st.selectbox("使用モデル", list(PRICING.keys()), index=0)
+    api_key = st.text_input("Gemini API Key", type="password")
     
     st.divider()
-    st.subheader("🖋️ 執筆・演出設定")
-    max_output = st.slider("応答の最大長さ (Output Length)", 100, 8000, 1000)
-    temp = st.slider("温度 (Temperature)", 0.0, 2.0, 0.7, help="低いほど冷徹・論理的になります")
-    
-    st.divider()
-    st.subheader("🚫 システム指示（プロンプト）")
-    # デフォルトの「サービス精神封印」プロンプト
-    default_system = """# 【最重要：AIの「サービス精神」の完全放棄】
-ユーザーを喜ばせようとする「過剰な親切心」や「ハーレム展開」を禁じます。
-1. **時間進行のロック**: 1回の返信で進む時間は数分以内。勝手に場面を飛ばさない。
-2. **胶着状態の維持**: キャラクターは安易にデレず、牽制し合い、沈黙や視線を重視する。
-3. **朝チュン仕様**: 直接的な性描写は避け、事後の残り香や気まずい空気、熱っぽい視線で官能性を表現する。"""
-    
-    system_input = st.text_area("System Instruction", value=default_system, height=300)
+    st.subheader("📚 プロンプト選択")
+    # AI Studio風のセレクトボックス
+    prompt_key = st.selectbox("設定を選択", list(PROMPT_TEMPLATES.keys()))
+    current_system = st.text_area("システム指示の編集", value=PROMPT_TEMPLATES[prompt_key], height=200)
 
     st.divider()
-    # コストメーター
-    st.metric("累計コスト (概算)", f"¥{st.session_state.total_cost_jpy:.2f}")
-    if st.button("コスト履歴リセット"):
-        st.session_state.total_cost_jpy = 0.0
-        st.rerun()
+    model_choice = st.selectbox("使用モデル", list(PRICING.keys()))
+    max_output = st.slider("応答の最大長さ", 100, 8000, 1000)
+    
+    st.divider()
+    st.metric("累計コスト", f"¥{st.session_state.total_cost_jpy:.2f}")
 
-# --- メインチャット画面 ---
-st.info(f"現在のモード: {model_choice} / 出力上限: {max_output}")
+# --- クラウド保存のヒント（簡易版） ---
+# 本来はGoogle Drive APIを使いますが、まずは「手動アップロード不要」な仕組みとして
+# Streamlitの「Secrets」機能を使ってGoogle Driveと連携する準備ができます。
+# 今回はまず、プロンプト選択機能を優先しました。
 
-# ログのアップロード機能（スマホ/PC同期用）
-uploaded_file = st.file_uploader("ログファイルを読み込んで再開", type="json")
-if uploaded_file is not None:
-    data = json.load(uploaded_file)
-    st.session_state.messages = data
-    st.success("ログを復元しました！")
+# --- メイン画面 ---
+st.info(f"現在のモード: {prompt_key}")
 
-# チャット表示
+# 履歴表示
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 入力欄
+# 入力
 if prompt := st.chat_input("密室に言葉を投げ入れる..."):
     if not api_key:
         st.error("API Keyを入力してください")
@@ -72,57 +67,33 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Gemini呼び出し
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(
-                model_name=model_choice,
-                system_instruction=system_input
-            )
-            
-            # 全履歴を送信（これが「整合性の鬼」仕様）
-            history = [{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages]
-            
-            with st.spinner("太宰たちが思考中..."):
-                response = model.generate_content(
-                    history,
-                    generation_config={
-                        "max_output_tokens": max_output,
-                        "temperature": temp
-                    }
-                )
-            
-            # 回答表示
-            with st.chat_message("assistant"):
-                st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-            
-            # トークン計算とコスト加算
-            usage = response.usage_metadata
-            in_cost = (usage.prompt_token_count / 1_000_000) * PRICING[model_choice]["in"] * JPY_RATE
-            out_cost = (usage.candidates_token_count / 1_000_000) * PRICING[model_choice]["out"] * JPY_RATE
-            st.session_state.total_cost_jpy += (in_cost + out_cost)
-            
-            st.toast(f"今回: ¥{(in_cost + out_cost):.2f} / In: {usage.prompt_token_count} / Out: {usage.candidates_token_count}")
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(model_name=model_choice, system_instruction=current_system)
+        
+        history = [{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages]
+        
+        with st.spinner("思考中..."):
+            response = model.generate_content(history, generation_config={"max_output_tokens": max_output})
+        
+        with st.chat_message("assistant"):
+            st.markdown(response.text)
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
+        
+        # コスト計算
+        usage = response.usage_metadata
+        cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
+                (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+        st.session_state.total_cost_jpy += cost
 
-        except Exception as e:
-            st.error(f"エラーが発生しました: {str(e)}")
-
-# --- フッター：章立て・保存機能 ---
-st.divider()
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("📸 章立て（要約してリセット）"):
-        st.warning("これまでの履歴を要約し、新しい章として開始します（API消費節約）")
-        # ここに要約ロジックを追加可能（今回は枠組みのみ）
-
-with col2:
-    # ログダウンロード（JSON形式）
-    log_json = json.dumps(st.session_state.messages, ensure_ascii=False, indent=2)
-    st.download_button(
-        label="💾 現在のログを保存",
-        data=log_json,
-        file_name=f"closed_room_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.json",
-        mime="application/json"
-    )
+# 章立て要約機能の強化案
+if st.button("📸 新章を開始（履歴を要約）"):
+    with st.spinner("これまでの物語を要約中..."):
+        summary_model = genai.GenerativeModel(model_name="gemini-3-flash-preview")
+        summary_prompt = f"これまでの会話を、次の章から再開するために必要な情報を落とさず、300文字程度で要約してください。\n\n履歴: {str(st.session_state.messages)}"
+        summary_res = summary_model.generate_content(summary_prompt)
+        
+        st.success("要約が完了しました。これをコピーしてSystem Instructionに貼り付け、チャットをクリアして再開してください。")
+        st.code(summary_res.text)
+        if st.button("チャット履歴をクリア"):
+            st.session_state.messages = []
+            st.rerun()
