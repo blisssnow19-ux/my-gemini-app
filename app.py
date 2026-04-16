@@ -194,7 +194,11 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name=model_choice, system_instruction=current_system)
         
-        history = [{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages]
+        # Streamlit用の "assistant" という名前を、Gemini用の "model" に翻訳して履歴を作る
+        history = []
+        for m in st.session_state.messages:
+            api_role = "model" if m["role"] == "assistant" else m["role"]
+            history.append({"role": api_role, "parts": [m["content"]]})
         
         with st.spinner("思考中..."):
             response = model.generate_content(history, generation_config={"max_output_tokens": max_output})
