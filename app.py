@@ -43,9 +43,9 @@ with st.sidebar:
     api_key = st.text_input("Gemini API Key", type="password")
     
     # 🌟 部屋名（これがセーブデータIDになります！）
-st.divider()
+    st.divider()
     st.subheader("📂 セーブデータの選択")
-    
+
     # Firebaseから「今ある部屋の名前」を全部取得
     try:
         rooms_ref = db.collection("rooms")
