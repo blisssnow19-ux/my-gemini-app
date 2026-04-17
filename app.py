@@ -169,7 +169,7 @@ with st.sidebar:
     # 🌟 エラー解消！ここに1つだけテキストエリアを置く
     current_system = st.text_area("システム指示の編集", value=display_prompt, height=200)
 
-st.divider()
+    st.divider()
     # 🌟 保存されていたモデルを初期選択状態にする
     model_index = list(PRICING.keys()).index(saved_model) if saved_model in PRICING else 0
     model_choice = st.selectbox("使用モデル", list(PRICING.keys()), index=model_index)
