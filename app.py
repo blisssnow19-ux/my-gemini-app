@@ -175,13 +175,15 @@ with st.sidebar:
     model_choice = st.selectbox("使用モデル", list(PRICING.keys()), index=model_index)
     
     max_output = st.slider("応答の最大長さ", 100, 8000, 1000)
+
+    st.divider()
+    st.metric("💸 累計コスト（概算）", f"¥{st.session_state.total_cost_jpy:.2f}")
     
     if st.button("🔄 データをクラウドから再読み込み"):
         st.rerun()
 
 # --- メイン画面 ---
 st.info(f"現在の部屋: {room_id} | モード: {prompt_key}")
-st.metric("累計コスト (概算)", f"¥{st.session_state.total_cost_jpy:.2f}")
 
 # 履歴表示
 for msg in st.session_state.messages:
