@@ -266,10 +266,26 @@ if st.button("📸 1. 新章への引き継ぎ資料を作成"):
         except Exception as e:
             st.error(f"AIの思考が途切れてしまいました。もう一度お試しください。詳細: {e}")
 
-# 🌟 保存された結果があれば表示し、削除ボタンを「外側」に置く
+# 🌟 保存された結果があれば表示する
 if "summary_text" in st.session_state:
     st.success("引き継ぎ資料の作成が完了しました！コピーして次の部屋でお使いください。")
     st.code(st.session_state.summary_text)
+    
+    # 🌟 ボタンを横並びにして綺麗に配置
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # 新機能：ただ表示を消すだけのボタン
+        if st.button("✖️ コピーしたので閉じる"):
+            del st.session_state.summary_text # メモリから消す
+            st.rerun() # 画面をリフレッシュ
+            
+    with col2:
+        # 既存：履歴ごと消し飛ばすボタン
+        if st.button("🗑️ 前の部屋の履歴を完全削除"):
+            doc_ref.delete()
+            del st.session_state.summary_text
+            st.rerun()
     
     # 削除ボタン（これなら確実に押せます！）
     if st.button("🗑️ 2. クラウド上の履歴を完全削除してリセット"):
