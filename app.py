@@ -149,11 +149,13 @@ if doc.exists:
     data = doc.to_dict()
     st.session_state.messages = data.get("messages", [])
     st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
-    saved_prompt = data.get("system_prompt", "") # クラウドに保存されたプロンプト
+    saved_prompt = data.get("system_prompt", "")
+    saved_model = data.get("model_choice", list(PRICING.keys())[0]) # 🌟 追加！
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
     saved_prompt = ""
+    saved_model = list(PRICING.keys())[0] # 🌟 追加！
 
 # --- サイドバー（後半）：プロンプトと設定 ---
 with st.sidebar:
@@ -167,8 +169,11 @@ with st.sidebar:
     # 🌟 エラー解消！ここに1つだけテキストエリアを置く
     current_system = st.text_area("システム指示の編集", value=display_prompt, height=200)
 
-    st.divider()
-    model_choice = st.selectbox("使用モデル", list(PRICING.keys()))
+st.divider()
+    # 🌟 保存されていたモデルを初期選択状態にする
+    model_index = list(PRICING.keys()).index(saved_model) if saved_model in PRICING else 0
+    model_choice = st.selectbox("使用モデル", list(PRICING.keys()), index=model_index)
+    
     max_output = st.slider("応答の最大長さ", 100, 8000, 1000)
     
     if st.button("🔄 データをクラウドから再読み込み"):
@@ -212,23 +217,36 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
         st.session_state.total_cost_jpy += cost
 
-        # 🌟 Firebaseへ自動保存（プロンプトも追加！）
+# 🌟 Firebaseへ自動保存
         doc_ref.set({
             "messages": st.session_state.messages,
             "total_cost": st.session_state.total_cost_jpy,
-            "system_prompt": current_system,  # 🌟 ここ！
+            "system_prompt": current_system,
+            "model_choice": model_choice,  # 🌟 モデルも一緒に保存！
             "last_update": datetime.datetime.now()
         })
         st.rerun()
 
 # --- 章立て機能 ---
-if st.button("📸 新章を開始（履歴を要約）"):
-    with st.spinner("要約中..."):
+if st.button("📸 新章を開始（詳細な引き継ぎ資料を作成）"):
+    with st.spinner("過去の文脈、感情の機微、現在の状況を抽出中（2000文字規模）..."):
         summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
-        summary_prompt = f"これまでの会話を300文字程度で要約してください。\n\n履歴: {str(st.session_state.messages)}"
+        
+        # 🌟 引き継ぎ用の最強プロンプト
+        summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための詳細なレポートを2000文字程度で作成してください。
+単なる出来事の羅列ではなく、以下の要素を必ず詳細に網羅すること：
+
+1. 【現在の物理的状況】：誰が、どこで、どんな体勢・服装でいるか。部屋の空気感。
+2. 【各キャラクターの心理状態】：スノウ、太宰、中也などの現在の感情、執着の度合い、ここに至るまでの心理的変化。
+3. 【確定した事実と伏線】：これまでに起きた重要な出来事、交わされた約束、隠されていること。
+4. 【直前の状況（再開地点）】：最後のやり取りはどのような会話・行動で終わったか。次の章の1行目にそのまま繋がるように詳しく。
+
+履歴: {str(st.session_state.messages)}"""
+        
         summary_res = summary_model.generate_content(summary_prompt)
-        st.success("要約完了。これをコピーして次のSystem Instructionに活用してください。")
+        st.success("引き継ぎ資料の作成が完了しました。これをコピーして、新章の『システム指示の編集』の末尾に貼り付けるか、最初の発言として投げ入れてください。")
         st.code(summary_res.text)
+        
         if st.button("クラウド上の履歴を完全削除"):
             doc_ref.delete()
             st.rerun()
