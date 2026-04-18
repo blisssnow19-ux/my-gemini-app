@@ -346,8 +346,6 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         
         with st.spinner("思考中..."):
             # 🌟 ここから下の safety_settings などは今のままでOKです！
-
-with st.spinner("思考中..."):
             
             # 🌟 メイン会話のセーフティフィルターも全解除！
             safety_settings = {
