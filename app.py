@@ -1,4 +1,4 @@
-    import streamlit as st
+import streamlit as st
 import google.generativeai as genai
 import firebase_admin
 from firebase_admin import credentials, firestore
