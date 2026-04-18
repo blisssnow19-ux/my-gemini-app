@@ -224,12 +224,14 @@ if doc.exists:
     st.session_state.messages = data.get("messages", [])
     st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
     saved_prompt = data.get("system_prompt", "")
-    saved_model = data.get("model_choice", list(PRICING.keys())[0]) # 🌟 追加！
+    saved_model = data.get("model_choice", list(PRICING.keys())[0])
+    saved_appearance = data.get("appearance", "") # 🌟 追加！
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
     saved_prompt = ""
-    saved_model = list(PRICING.keys())[0] # 🌟 追加！
+    saved_model = list(PRICING.keys())[0]
+    saved_appearance = "" # 🌟 追加！
 
 # --- サイドバー（後半）：プロンプトと設定 ---
 with st.sidebar:
@@ -274,6 +276,7 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name=model_choice, system_instruction=current_system)
+
         
         # Streamlit用の "assistant" という名前を、Gemini用の "model" に翻訳して履歴を作る
         history = []
@@ -281,8 +284,22 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
             api_role = "model" if m["role"] == "assistant" else m["role"]
             history.append({"role": api_role, "parts": [m["content"]]})
         
-        with st.spinner("思考中..."):
-            response = model.generate_content(history, generation_config={"max_output_tokens": max_output})
+with st.spinner("思考中..."):
+            
+            # 🌟 メイン会話のセーフティフィルターも全解除！
+            safety_settings = {
+                'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
+                'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
+                'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
+                'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
+            }
+            
+            # 🌟 safety_settings を追加してAIに渡す
+            response = model.generate_content(
+                history,
+                safety_settings=safety_settings  # ←これを追加！
+                # (もし元のコードに stream=True などがあれば、カンマで区切って残してください)
+            )
         
         # AIの回答を保存
         st.session_state.messages.append({"role": "assistant", "content": response.text})
