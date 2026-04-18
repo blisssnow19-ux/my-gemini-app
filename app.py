@@ -354,14 +354,14 @@ with st.spinner("思考中..."):
                 # (もし元のコードに stream=True などがあれば、カンマで区切って残してください)
             )
         
-        # AIの回答を保存
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
-        
-        # コスト計算
-        usage = response.usage_metadata
-        cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
-                (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
-        st.session_state.total_cost_jpy += cost
+            # AIの回答を保存
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+    
+            # コスト計算
+            usage = response.usage_metadata
+            cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
+                    (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+            st.session_state.total_cost_jpy += cost
 
 # 🌟 Firebaseへ自動保存
         doc_ref.set({
