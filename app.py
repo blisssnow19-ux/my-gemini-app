@@ -373,83 +373,54 @@ with st.spinner("思考中..."):
             })
             st.rerun()
 
-            # --- 章立て機能 ---
-            st.divider()
+# --- 章立て機能 ---
+st.divider()
+
+if st.button("📸 1. 新章への引き継ぎ資料を作成"):
+    with st.spinner("過去の文脈、感情の機微を抽出中...（※超長文のため数十秒かかります。そのままお待ちください！）"):
+        try:
+            summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
             
-            if st.button("📸 1. 新章への引き継ぎ資料を作成"):
-                with st.spinner("過去の文脈、感情の機微を抽出中...（※超長文のため数十秒かかります。そのままお待ちください！）"):
-                    try:
-                        summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
-                
-                         # 🌟 セーフティフィルターを全解除（大人向けの描写でAIが沈黙するのを防ぐ）
-                        safety_settings = {
-                            'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
-                            'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
-                            'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
-                            'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
-                               }
-                    
-                        summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための「超詳細な状況レポート」を作成してください。
-                        【厳命】：絶対に要約・簡略化しないでください。最低でも1500〜2000文字以上の特大ボリュームで、まるで小説の情景描写のように、ねっとりと詳細に書き起こすこと。
+            safety_settings = {
+                'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
+                'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
+                'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
+                'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
+            }
             
-                        以下の4つの項目について、それぞれ最低でも300文字以上を使って、極めて具体的に描写してください。
+            summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための「超詳細な状況レポート」を作成してください。
+【厳命】：絶対に要約・簡略化しないでください。最低でも1500〜2000文字以上の特大ボリュームで、まるで小説の情景描写のように、ねっとりと詳細に書き起こすこと。
+
+以下の4つの項目について、それぞれ最低でも300文字以上を使って、極めて具体的に描写してください。
+
+1. 【現在の物理的状況】：誰が、部屋のどこで、どんな体勢・服装でいるか。視線の向き、室内の温度感、残り香、沈黙の重さまで視覚的・感覚的に描写する。
+2. 【各キャラクターの心理状態】：スノウ、太宰、中也などの現在の感情、執着の度合い、表面上の態度と裏腹な本音。ここに至るまでの心理的なグラデーションを克明に分析する。
+3. 【確定した事実と伏線】：これまでに起きた重要なやり取り、誰が何を知っていて何を知らないか。交わされた視線や、言葉にならなかった感情の動きも含める。
+4. 【直前の状況（再開地点の完全再現）】：最後のやり取りはどのような会話・行動で終わったか。次の章の1行目にそのままシームレスに繋がるよう、最後の瞬間の空気を切り取るように詳しく書く。
+
+履歴: {str(st.session_state.messages)}"""
             
-                        1. 【現在の物理的状況】：誰が、部屋のどこで、どんな体勢・服装でいるか。視線の向き、室内の温度感、残り香、沈黙の重さまで視覚的・感覚的に描写する。
-                        2. 【各キャラクターの心理状態】：スノウ、太宰、中也などの現在の感情、執着の度合い、表面上の態度と裏腹な本音。ここに至るまでの心理的なグラデーションを克明に分析する。
-                        3. 【確定した事実と伏線】：これまでに起きた重要なやり取り、誰が何を知っていて何を知らないか。交わされた視線や、言葉にならなかった感情の動きも含める。
-                        4. 【直前の状況（再開地点の完全再現）】：最後のやり取りはどのような会話・行動で終わったか。次の章の1行目にそのままシームレスに繋がるよう、最後の瞬間の空気を切り取るように詳しく書く。
+            summary_res = summary_model.generate_content(summary_prompt, safety_settings=safety_settings)
+            st.session_state.summary_text = summary_res.text
             
-                        履歴: {str(st.session_state.messages)}"""
-                        
-                        # フィルター解除設定を適用して生成
-                        summary_res = summary_model.generate_content(summary_prompt, safety_settings=safety_settings)
-                        
-                        # 🌟 結果を保存（画面がリセットされて消えるのを防ぐ魔法）
-                        st.session_state.summary_text = summary_res.text
-                        
-                    except Exception as e:
-                    st.error(f"AIの思考が途切れてしまいました。もう一度お試しください。詳細: {e}")
-                        
-                    # 🌟 保存された結果があれば表示する
-                    if "summary_text" in st.session_state:
-                    st.success("引き継ぎ資料の作成が完了しました！コピーして次の部屋でお使いください。")
-                    st.code(st.session_state.summary_text)
-                
-                    # 🌟 ボタンを横並びにして綺麗に配置
-                     col1, col2 = st.columns(2)
-                
-                    with col1:
-                    # 新機能：ただ表示を消すだけのボタン
-                    if st.button("✖️ コピーしたので閉じる"):
-                    del st.session_state.summary_text # メモリから消す
-                    st.rerun() # 画面をリフレッシュ
-                        
-                    with col2:
-                    # 既存：履歴ごと消し飛ばすボタン
-                    if st.button("🗑️ 前の部屋の履歴を完全削除"):
-                    doc_ref.delete()
-                    del st.session_state.summary_text
-                    st.rerun()
-                
-                    # 削除ボタン（これなら確実に押せます！）
-                    if st.button("🗑️ 2. クラウド上の履歴を完全削除してリセット"):
-                    doc_ref.delete()
-                    del st.session_state.summary_text # 表示した要約も綺麗に消す
-                    st.rerun()
+        except Exception as e:
+            st.error(f"AIの思考が途切れてしまいました。もう一度お試しください。詳細: {e}")
+
+# 🌟 保存された結果があれば表示する
+if "summary_text" in st.session_state:
+    st.success("引き継ぎ資料の作成が完了しました！コピーして次の部屋でお使いください。")
+    st.code(st.session_state.summary_text)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("✖️ コピーしたので閉じる"):
+            del st.session_state.summary_text
+            st.rerun()
             
-                    # 🌟 引き継ぎ用の最強プロンプト（リミッター解除版）
-                    summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための「超詳細な状況レポート」を作成してください。
-            【厳命】：絶対に要約・簡略化しないでください。最低でも1500〜2000文字以上の特大ボリュームで、まるで小説の情景描写のように、ねっとりと詳細に書き起こすこと。
-            
-            以下の4つの項目について、それぞれ最低でも300文字以上を使って、極めて具体的に描写してください。
-            
-            1. 【現在の物理的状況】：誰が、部屋のどこで、どんな体勢・服装でいるか。視線の向き、室内の温度感、残り香、沈黙の重さまで視覚的・感覚的に描写する。
-            2. 【各キャラクターの心理状態】：スノウ、太宰、中也などの現在の感情、執着の度合い、表面上の態度と裏腹な本音。ここに至るまでの心理的なグラデーションを克明に分析する。
-            3. 【確定した事実と伏線】：これまでに起きた重要なやり取り、誰が何を知っていて何を知らないか。交わされた視線や、言葉にならなかった感情の動きも含める。
-            4. 【直前の状況（再開地点の完全再現）】：最後のやり取りはどのような会話・行動で終わったか。次の章の1行目にそのままシームレスに繋がるよう、最後の瞬間の空気を切り取るように詳しく書く。
-            
-             履歴: {str(st.session_state.messages)}"""
-                    
-                     if st.button("クラウド上の履歴を完全削除"):
-                     doc_ref.delete()
-                     st.rerun()
+    with col2:
+        if st.button("🗑️ 前の部屋の履歴を完全削除"):
+            doc_ref.delete()
+            if "summary_text" in st.session_state:
+                del st.session_state.summary_text
+            st.rerun()
