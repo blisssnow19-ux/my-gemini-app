@@ -375,12 +375,12 @@ with st.spinner("思考中..."):
 
             # --- 章立て機能 ---
             st.divider()
-
-            if st.button("📸 1. 新章への引き継ぎ資料を作成"):
-            with st.spinner("過去の文脈、感情の機微を抽出中...（※超長文のため数十秒かかります。そのままお待ちください！）"):
-            try:
-            summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
             
+            if st.button("📸 1. 新章への引き継ぎ資料を作成"):
+                with st.spinner("過去の文脈、感情の機微を抽出中...（※超長文のため数十秒かかります。そのままお待ちください！）"):
+                    try:
+                        summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
+                
             # 🌟 セーフティフィルターを全解除（大人向けの描写でAIが沈黙するのを防ぐ）
             safety_settings = {
                 'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
