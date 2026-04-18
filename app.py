@@ -381,15 +381,15 @@ with st.spinner("思考中..."):
                     try:
                         summary_model = genai.GenerativeModel(model_name="gemini-3.1-pro-preview")
                 
-            # 🌟 セーフティフィルターを全解除（大人向けの描写でAIが沈黙するのを防ぐ）
-            safety_settings = {
-                'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
-                'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
-                'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
-                'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
-            }
+                         # 🌟 セーフティフィルターを全解除（大人向けの描写でAIが沈黙するのを防ぐ）
+                        safety_settings = {
+                            'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
+                            'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
+                            'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
+                            'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
+                               }
             
-            summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための「超詳細な状況レポート」を作成してください。
+                         summary_prompt = f"""以下の会話履歴を読み込み、次の章（別チャット）へ文脈や空気感を完璧に引き継ぐための「超詳細な状況レポート」を作成してください。
 【厳命】：絶対に要約・簡略化しないでください。最低でも1500〜2000文字以上の特大ボリュームで、まるで小説の情景描写のように、ねっとりと詳細に書き起こすこと。
 
 以下の4つの項目について、それぞれ最低でも300文字以上を使って、極めて具体的に描写してください。
