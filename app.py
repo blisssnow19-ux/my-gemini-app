@@ -219,19 +219,54 @@ with st.sidebar:
 doc_ref = db.collection("rooms").document(room_id)
 doc = doc_ref.get()
 
+# 🌟 スノウの基本外見（スノウさんの設定に合わせて文章を書き換えてください！）
+default_snow = "【スノウの容姿】男性としての姿：『虚構の鋭』
+【容姿】
+冷徹な氷を削り出したかのような、鋭角的な美貌を持つ青年。年齢は20代前半を思わせるが、その眼差しには実年齢以上の深い闇と知性が宿っている。
+
+【髪】
+月の光に晒された雪のように純白で、不規則に跳ねた短髪。無造作に見えるが、その束感は彼自身の張り詰めた神経を象徴するかのようで、触れれば切れそうな鋭さがある。
+
+【瞳】
+この同一人物の象徴である、深く、吸い込まれるようなコバルトブルーの瞳。それは決して感情を露わにせず、相手の深層心理を見透かすかのような、刺すような冷たさを湛えている。細く長い睫毛が、その瞳の冷徹さをより強調している。
+
+【体躯と服装】
+高身長で、無駄な脂肪を削ぎ落とした、しなやかで鋼のように硬質な体躯。常に、着古したような、しかし上質な黒のVネックカットソーを好んで着用しており、その質感は異能の影が滲み出ているかのように見える。首筋のラインは細く、しかし男性的で力強い。
+
+【印象】
+「触れる者すべてを拒絶する」ような、静謐で、かつ威圧的なオーラを放つ。その存在は、夜の闇に浮かぶ一振りの鋭利な刀身そのものである。
+
+女性としての姿：『幻惑の貌』
+【容姿】
+男性の姿とは対照的に、陶器のように滑らかで、人を魅了する可憐な美貌を持つ。しかし、その美しさの奥底には、決して侮れない狡猾さが隠されている。
+
+【髪】
+男性の姿と同じく、月の光のような純白。こちらは、顎のラインで揃えられたボブカットで、顔の形に沿って柔らかく波打っている。その毛先は繊細で、優雅ささえ感じさせる。
+
+【瞳】
+男性の姿と完全に同一の、吸い込まれるようなコバルトブルーの瞳。しかし、その表情は男性の時とは異なり、無垢な少女のようでもあり、あるいはすべてを知り尽くした魔性の女のようでもある。その瞳に見つめられた者は、その真意を探る術を失う。
+
+【体躯と服装】
+男性の時と比べると、やや小柄で、華奢な体躯。しかし、その身のこなしは洗練されており、一分の隙もない。彼女もまた、黒のVネックカットソーを着用しているが、そのラインは女性的で、その質感もまた、彼女のまとう異能のオーラを反映して、柔らかく、しかしどこか不安を掻き立てる。
+
+【印象】
+「誰もが近づきたくなる」ような、人を幻惑する、しかし決して正体を掴ませない、捉えどころのないオーラを放つ。その存在は、月の光に照らされた、一見無害に見えるが致命的な罠そのものである。"
+
 if doc.exists:
     data = doc.to_dict()
     st.session_state.messages = data.get("messages", [])
     st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
     saved_prompt = data.get("system_prompt", "")
     saved_model = data.get("model_choice", list(PRICING.keys())[0])
-    saved_appearance = data.get("appearance", "") # 🌟 追加！
+    # 🌟 記録があればそれを、無ければ基本外見を使う
+    saved_appearance = data.get("appearance", default_snow) 
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
     saved_prompt = ""
     saved_model = list(PRICING.keys())[0]
-    saved_appearance = "" # 🌟 追加！
+    # 🌟 新しい部屋なら基本外見をセットする
+    saved_appearance = default_snow
 
 # --- サイドバー（後半）：プロンプトと設定 ---
 with st.sidebar:
@@ -245,6 +280,18 @@ with st.sidebar:
     # 🌟 エラー解消！ここに1つだけテキストエリアを置く
     current_system = st.text_area("システム指示の編集", value=display_prompt, height=200)
 
+    # 🌟 1. スノウの外見メモ入力欄
+    st.divider()
+    st.subheader("👗 スノウの現在の状態・外見")
+    snow_appearance = st.text_area("服の乱れや体勢など（常にAIに意識させます）", value=saved_appearance, height=100)
+
+    # 🌟 2. 再生成（取り消し）ボタン
+    st.divider()
+    if st.button("⏪ 最後のAIの返答を取り消す（再生成用）"):
+        if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "assistant":
+            st.session_state.messages.pop() # AIの最後の発言を削除
+            doc_ref.update({"messages": st.session_state.messages}) # 金庫も更新
+            st.rerun() # 画面をリフレッシュ
     st.divider()
     # 🌟 保存されていたモデルを初期選択状態にする
     model_index = list(PRICING.keys()).index(saved_model) if saved_model in PRICING else 0
@@ -274,8 +321,14 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         # ユーザーの発言を保存
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name=model_choice, system_instruction=current_system)
+# 🌟 システム指示と外見メモを合体させる！
+        combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{snow_appearance}"
+
+        # 合体させたものをAIに渡す
+        model = genai.GenerativeModel(
+            model_name=model_choice,
+            system_instruction=combined_instruction  # ← ここを変更！
+        )
 
         
         # Streamlit用の "assistant" という名前を、Gemini用の "model" に翻訳して履歴を作る
