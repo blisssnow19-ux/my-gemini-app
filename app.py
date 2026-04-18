@@ -336,7 +336,17 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         for m in st.session_state.messages:
             api_role = "model" if m["role"] == "assistant" else m["role"]
             history.append({"role": api_role, "parts": [m["content"]]})
+
+# 🌟 AI（model）の準備と、スノウの外見メモの読み込み！
+        combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{saved_appearance}"
+        model = genai.GenerativeModel(
+            model_name=model_choice,
+            system_instruction=combined_instruction
+        )
         
+        with st.spinner("思考中..."):
+            # 🌟 ここから下の safety_settings などは今のままでOKです！
+
 with st.spinner("思考中..."):
             
             # 🌟 メイン会話のセーフティフィルターも全解除！
