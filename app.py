@@ -304,7 +304,7 @@ with st.sidebar:
     # 🌟 完璧な同期システム（ここまで）
                 
     # 🌟 index=default_idx をつけて、初期位置を固定！
-    prompt_key = st.selectbox("設定を選択", prompt_list, index=default_idx)
+    prompt_key = st.selectbox("設定を選択", prompt_list, key="prompt_selector", on_change=sync_prompt)
 
     # 初期値の決定：クラウドデータがあればそれを、無ければ選んだテンプレートを使用
     display_prompt = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_key]
