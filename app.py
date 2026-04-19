@@ -385,7 +385,14 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
             )
         
             # AIの回答を保存
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            try:
+                reply_text = response.text
+            except ValueError:
+  
+            # 🌟 返答がブロックされたり空だった場合のエラー回避バリア！
+                reply_text = "【システム通知】AIが言葉に詰まって沈黙しました。（過激な展開としてフィルターにブロックされたか、設定が複雑すぎてフリーズしました）。左のサイドバーから「最後の返答を取り消す」を押して、少しマイルドな言葉をかけ直してみてください。"
+        
+            st.session_state.messages.append({"role": "assistant", "content": reply_text})
     
             # コスト計算
             usage = response.usage_metadata
