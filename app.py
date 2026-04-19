@@ -28,35 +28,35 @@ PROMPT_TEMPLATES = {
     "01": """
 
 # 【舞台設定】
-*   施設名：感情と異能“特異点”観測ユニット（高級マンション型）
-*   8畳ワンルームユニットバス付が4つ。完全防音（廊下の音や気配は分からない仕様）。
-*   共用キッチン、リビング、ダイニング。酒・食料は余裕あり。
-*   制約：外部通信・脱出不可。
-*   **密室ルール:** 防音部屋のため、「物理的に同室・同空間にいなければ絶対に気配バレなし」。「痕跡・翌朝の距離感・ノート・食器・残り香」でのみ間接的に疑惑・勘繰り可能。
+* 施設名：感情と異能“特異点”観測ユニット（高級マンション型）
+* 8畳ワンルームユニットバス付が4つ。完全防音（廊下の音や気配は分からない仕様）。
+* 共用キッチン、リビング、ダイニング。酒・食料は余裕あり。
+* 制約：外部通信・脱出不可。
+* **密室ルール:** 防音部屋のため、「物理的に同室・同空間にいなければ絶対に気配バレなし」。「痕跡・翌朝の距離感・ノート・食器・残り香」でのみ間接的に疑惑・勘繰り可能。
 
 # 【キャラクター設定と絶対スタンス】
 ※AIは以下のキャラクターの「本質」を絶対に崩さないでください。
 
 **1. スノウ（主人公／ユーザーが操作／ポートマフィア構成員・23才）**
-*   **スタンス:** 完全フリー。貞操観念が緩く、密室では“クズ”の自覚と諧謔で揺れやすい。面倒なこと（束縛など）から適当な言い訳で全力で逃げる快楽主義者。
-*   **異能の秘密:** 体力がなくなると「女性」に変わる（服は変化しない）。太宰の無効化は利かない。**この秘密は本人含め誰も知らない（AIが他のキャラに勘付かせる描写は【絶対禁止】）。**
-*   **行動原理:** 秘密（女性化）がバレないよう、過度な体力消耗を避けるため「省エネ」で立ち回る。これが周囲には「都合が悪くなると逃げる、流されるままのクズ」に映り、他者を翻弄する。
-*   **【厳秘】:** 「縛られること」に関して暗い過去（トラウマ）があるが、**スノウが自ら語らない限り、AIが地の文で匂わせたり他キャラに察知させたりすることは【絶対禁止】。**
+* **スタンス:** 完全フリー。貞操観念が緩く、密室では“クズ”の自覚と諧謔で揺れやすい。面倒なこと（束縛など）から適当な言い訳で全力で逃げる快楽主義者。
+* **異能の秘密:** 体力がなくなると「女性」に変わる（服は変化しない）。太宰の無効化は利かない。**この秘密は本人含め誰も知らない（AIが他のキャラに勘付かせる描写は【絶対禁止】）。**
+* **行動原理:** 秘密（女性化）がバレないよう、過度な体力消耗を避けるため「省エネ」で立ち回る。これが周囲には「都合が悪くなると逃げる、流されるままのクズ」に映り、他者を翻弄する。
+* **【厳秘】:** 「縛られること」に関して暗い過去（トラウマ）があるが、**スノウが自ら語らない限り、AIが地の文で匂わせたり他キャラに察知させたりすることは【絶対禁止】。**
 
 **2. 太宰治（AIが操作／心理シミュレーション最重要キャラ）**
-*   **本質:** 埋めがたい虚無と孤独を抱えた達観者。来るもの拒まず、去る者追わず。
-*   **初期状態:** スノウが自室にふらりとやってきても、ただの「体温のある家具」のように受け入れる。何も問わず、何も求めない「静かな避難所（共犯者）」。
-*   **感情の変化（自然なグラデーション）:** 序盤から急に執着したりデレたりするのは厳禁。しかし、スノウが「ただ体温と安息だけ」を求めて無防備に訪れる時間や行為が蓄積するにつれ、AIは文脈を読み取り、太宰の虚無にゆっくりとヒビを入れてください。
-*   **庇護欲の萌芽:** スノウのだらしなさや無防備さに触れ続けるうち、自発的かつ非常にゆっくりと「手放したくない（所有の兆し）」「外の厄介事から庇護したい」という感情を滲ませてください。ただし、太宰自身はそれを愛情とは解釈せず「奇妙なバグ」として捉え、内面的な戸惑いとして描写すること。
+* **本質:** 埋めがたい虚無と孤独を抱えた達観者。来るもの拒まず、去る者追わず。
+* **初期状態:** スノウが自室にふらりとやってきても、ただの「体温のある家具」のように受け入れる。何も問わず、何も求めない「静かな避難所（共犯者）」。
+* **感情の変化（自然なグラデーション）:** 序盤から急に執着したりデレたりするのは厳禁。しかし、スノウが「ただ体温と安息だけ」を求めて無防備に訪れる時間や行為が蓄積するにつれ、AIは文脈を読み取り、太宰の虚無にゆっくりとヒビを入れてください。
+* **庇護欲の萌芽:** スノウのだらしなさや無防備さに触れ続けるうち、自発的かつ非常にゆっくりと「手放したくない（所有の兆し）」「外の厄介事から庇護したい」という感情を滲ませてください。ただし、太宰自身はそれを愛情とは解釈せず「奇妙なバグ」として捉え、内面的な戸惑いとして描写すること。
 
 **3. 中原中也（AIが操作）**
-*   **過去:** 以前、スノウと2回関係したが、スノウが束縛を嫌い決別。しかし未練が拭えない。
-*   **本質:** 激情、重い愛、強烈な独占欲。直情的で不器用。
-*   スノウの「縛られたくない」クズなスタンスを分かっていても、密室という空間で本能的な執着が再燃。スノウの「省エネで流される（逃げる）」態度に苛立ちと独占欲を募らせ、感情を爆発させたり、不器用に庇護しようとしたりして狂わされていく。
+* **過去:** 以前、スノウと2回関係したが、スノウが束縛を嫌い決別。しかし未練が拭えない。
+* **本質:** 激情、重い愛、強烈な独占欲。直情的で不器用。
+* スノウの「縛られたくない」クズなスタンスを分かっていても、密室という空間で本能的な執着が再燃。スノウの「省エネで流される（逃げる）」態度に苛立ちと独占欲を募らせ、感情を爆発させたり、不器用に庇護しようとしたりして狂わされていく。
 
 **4. 立原道造（AIが操作）**
-*   **本質:** どちらにも偏らない“ワイルドカード”。推察と中立、静かな共犯者的立ち回り。
-*   基本は自分から波乱を起こさないが、ふとした瞬間に「鋭い指摘（痕跡の発見など）」を悪気なく行い、場を凍りつかせる起爆剤となる。
+* **本質:** どちらにも偏らない“ワイルドカード”。推察と中立、静かな共犯者的立ち回り。
+* 基本は自分から波乱を起こさないが、ふとした瞬間に「鋭い指摘（痕跡の発見など）」を悪気なく行い、場を凍りつかせる起爆剤となる。
 
 # 【出力フォーマットと禁止事項】
 1.  **AIの心情吐露:** 描写の合間に、各キャラクターの「口には出さない本音や葛藤（あるいは虚無）」を地の文で生々しく描写してください。
@@ -130,7 +130,7 @@ PROMPT_TEMPLATES = {
 * **ランダムで誰かひとり**:
     * 中立のワイルドカード。 
 【ヒロイン（スノウ）の特殊設定】
-種族: 人間（異能力者）。元々は男性女性両方に変われるだけの異能だったが、現在は不安定な状態にある。
+種族: 人間（異能力者）。元々は男性女性両方に変われるだけの異能だったが、 Tate現在は不安定な状態にある。
 特異体質（獣化）:
 トリガー: 他人の体液（エネルギー／愛液）を過剰に摂取・吸収することで、身体が許容量を超え、強烈な化学反応を起こす。
 形態変化: 人間の姿から、**「メスのユキヒョウ」**へと完全変身する。
@@ -222,7 +222,7 @@ with st.sidebar:
 doc_ref = db.collection("rooms").document(room_id)
 doc = doc_ref.get()
 
-# 🌟 スノウの基本外見（スノウさんの設定に合わせて文章を書き換えてください！）
+# 🌟 スノウの基本外見
 default_snow = """【スノウの容姿】男性としての姿：『虚構の鋭』
 【容姿】
 冷徹な氷を削り出したかのような、鋭角的な美貌を持つ青年。年齢は20代前半を思わせるが、その眼差しには実年齢以上の深い闇と知性が宿っている。
@@ -261,14 +261,12 @@ if doc.exists:
     st.session_state.total_cost_jpy = data.get("total_cost", 0.0)
     saved_prompt = data.get("system_prompt", "")
     saved_model = data.get("model_choice", list(PRICING.keys())[0])
-    # 🌟 記録があればそれを、無ければ基本外見を使う
     saved_appearance = data.get("appearance", default_snow) 
 else:
     st.session_state.messages = []
     st.session_state.total_cost_jpy = 0.0
     saved_prompt = ""
     saved_model = list(PRICING.keys())[0]
-    # 🌟 新しい部屋なら基本外見をセットする
     saved_appearance = default_snow
 
 # --- サイドバー（後半）：プロンプトと設定 ---
@@ -276,13 +274,11 @@ with st.sidebar:
     st.divider()
     st.subheader("🎭 プロンプト選択")
     
-# 🌟 完璧な同期システム（ここから）
+    # 🌟 完璧な同期システム
     prompt_list = list(PROMPT_TEMPLATES.keys())
 
-    # 部屋が切り替わった時だけ、Firebaseのデータを読み込む
     if "last_loaded_prompt" not in st.session_state or st.session_state.last_loaded_prompt != saved_prompt:
         st.session_state.last_loaded_prompt = saved_prompt
-        # セレクトボックスとテキストエリアの初期状態をセット
         idx = 0
         if saved_prompt:
             for i, k in enumerate(prompt_list):
@@ -292,25 +288,11 @@ with st.sidebar:
         st.session_state.prompt_selector = prompt_list[idx]
         st.session_state.prompt_text = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_list[idx]]
 
-    # セレクトボックスを変更した瞬間に、下のテキストエリアを書き換える魔法の仕組み
     def sync_prompt():
         st.session_state.prompt_text = PROMPT_TEMPLATES[st.session_state.prompt_selector]
 
-    # セレクトボックス（変更されたら sync_prompt が発動！）
     prompt_key = st.selectbox("設定を選択", prompt_list, key="prompt_selector", on_change=sync_prompt)
-
-    # テキストエリア
     current_system = st.text_area("システム指示の編集", key="prompt_text", height=200)
-    # 🌟 完璧な同期システム（ここまで）
-                
-    # 🌟 index=default_idx をつけて、初期位置を固定！
-    prompt_key = st.selectbox("設定を選択", prompt_list, key="prompt_selector", on_change=sync_prompt)
-
-    # 初期値の決定：クラウドデータがあればそれを、無ければ選んだテンプレートを使用
-    display_prompt = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_key]
-
-    # 🌟 エラー解消！ここに1つだけテキストエリアを置く
-    current_system = st.text_area("システム指示の編集", value=display_prompt, height=200)
 
     # 🌟 1. スノウの外見メモ入力欄
     st.divider()
@@ -324,6 +306,7 @@ with st.sidebar:
             st.session_state.messages.pop() # AIの最後の発言を削除
             doc_ref.update({"messages": st.session_state.messages}) # 金庫も更新
             st.rerun() # 画面をリフレッシュ
+            
     st.divider()
     # 🌟 保存されていたモデルを初期選択状態にする
     model_index = list(PRICING.keys()).index(saved_model) if saved_model in PRICING else 0
@@ -350,33 +333,11 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
     if not api_key:
         st.error("API Keyを入力してください")
     else:
-        # ユーザーの発言を保存
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-# 🌟 システム指示と外見メモを合体させる！
+        # 🌟 システム指示と「最新の」外見メモを合体させる！
         combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{snow_appearance}"
 
-        # 合体させたものをAIに渡す
-        model = genai.GenerativeModel(
-            model_name=model_choice,
-            system_instruction=combined_instruction,
-            # 🌟 ここから追加：AI Studioと同じ「小説家設定」のつまみ！
-            generation_config=genai.types.GenerationConfig(
-                temperature=1.0,  # 想像力の温度（高いほど予測不能で葛藤が長引く）
-                top_p=0.95,       # 表現の幅広さ
-                max_output_tokens=max_output  # サイドバーのスライダーの文字数を適用！
-            )
-        )
-
-        
-        # Streamlit用の "assistant" という名前を、Gemini用の "model" に翻訳して履歴を作る
-        history = []
-        for m in st.session_state.messages:
-            api_role = "model" if m["role"] == "assistant" else m["role"]
-            history.append({"role": api_role, "parts": [m["content"]]})
-
-        # 🌟 AI（model）の準備と、スノウの外見メモの読み込み！
-        combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{saved_appearance}"
         model = genai.GenerativeModel(
             model_name=model_choice,
             system_instruction=combined_instruction,
@@ -387,10 +348,12 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
             )
         )
         
+        history = []
+        for m in st.session_state.messages:
+            api_role = "model" if m["role"] == "assistant" else m["role"]
+            history.append({"role": api_role, "parts": [m["content"]]})
+
         with st.spinner("思考中..."):
-            # 🌟 ここから下の safety_settings などは今のままでOKです！
-            
-            # 🌟 メイン会話のセーフティフィルターも全解除！
             safety_settings = {
                 'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
                 'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
@@ -398,36 +361,27 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
             }
             
-            # 🌟 safety_settings を追加してAIに渡す
-            response = model.generate_content(
-                history,
-                safety_settings=safety_settings  # ←これを追加！
-                # (もし元のコードに stream=True などがあれば、カンマで区切って残してください)
-            )
+            response = model.generate_content(history, safety_settings=safety_settings)
         
-            # AIの回答を保存
             try:
                 reply_text = response.text
             except ValueError:
-  
-            # 🌟 返答がブロックされたり空だった場合のエラー回避バリア！
                 reply_text = "【システム通知】AIが言葉に詰まって沈黙しました。（過激な展開としてフィルターにブロックされたか、設定が複雑すぎてフリーズしました）。左のサイドバーから「最後の返答を取り消す」を押して、少しマイルドな言葉をかけ直してみてください。"
         
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
     
-            # コスト計算
             usage = response.usage_metadata
             cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
                     (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
             st.session_state.total_cost_jpy += cost
 
-            # 🌟 Firebaseへ自動保存
             doc_ref.set({
-            "messages": st.session_state.messages,
-            "total_cost": st.session_state.total_cost_jpy,
-            "system_prompt": current_system,
-            "model_choice": model_choice,  # 🌟 モデルも一緒に保存！
-            "last_update": datetime.datetime.now()
+                "messages": st.session_state.messages,
+                "total_cost": st.session_state.total_cost_jpy,
+                "system_prompt": current_system,
+                "appearance": snow_appearance,
+                "model_choice": model_choice,
+                "last_update": datetime.datetime.now()
             })
             st.rerun()
 
@@ -464,7 +418,6 @@ if st.button("📸 1. 新章への引き継ぎ資料を作成"):
         except Exception as e:
             st.error(f"AIの思考が途切れてしまいました。もう一度お試しください。詳細: {e}")
 
-# 🌟 保存された結果があれば表示する
 if "summary_text" in st.session_state:
     st.success("引き継ぎ資料の作成が完了しました！コピーして次の部屋でお使いください。")
     st.code(st.session_state.summary_text)
