@@ -271,8 +271,19 @@ else:
 # --- サイドバー（後半）：プロンプトと設定 ---
 with st.sidebar:
     st.divider()
-    st.subheader("📚 プロンプト選択")
-    prompt_key = st.selectbox("設定を選択", list(PROMPT_TEMPLATES.keys()))
+    st.subheader("🎭 プロンプト選択")
+    
+    # 🌟 記憶喪失対策：保存されている文章と一致するテンプレートを探す
+    prompt_list = list(PROMPT_TEMPLATES.keys())
+    default_idx = 0
+    if saved_prompt:
+        for i, key in enumerate(prompt_list):
+            if PROMPT_TEMPLATES[key] == saved_prompt:
+                default_idx = i
+                break
+                
+    # 🌟 index=default_idx をつけて、初期位置を固定！
+    prompt_key = st.selectbox("設定を選択", prompt_list, index=default_idx)
 
     # 初期値の決定：クラウドデータがあればそれを、無ければ選んだテンプレートを使用
     display_prompt = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_key]
@@ -348,6 +359,11 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         model = genai.GenerativeModel(
             model_name=model_choice,
             system_instruction=combined_instruction
+            generation_config=genai.types.GenerationConfig(
+                temperature=1.0,
+                top_p=0.95,
+                max_output_tokens=max_output
+            )
         )
         
         with st.spinner("思考中..."):
