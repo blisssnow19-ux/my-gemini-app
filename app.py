@@ -327,7 +327,13 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         # 合体させたものをAIに渡す
         model = genai.GenerativeModel(
             model_name=model_choice,
-            system_instruction=combined_instruction  # ← ここを変更！
+            system_instruction=combined_instruction,
+            # 🌟 ここから追加：AI Studioと同じ「小説家設定」のつまみ！
+            generation_config=genai.types.GenerationConfig(
+                temperature=1.0,  # 想像力の温度（高いほど予測不能で葛藤が長引く）
+                top_p=0.95,       # 表現の幅広さ
+                max_output_tokens=max_output  # サイドバーのスライダーの文字数を適用！
+            )
         )
 
         
