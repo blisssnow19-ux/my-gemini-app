@@ -276,14 +276,32 @@ with st.sidebar:
     st.divider()
     st.subheader("🎭 プロンプト選択")
     
-    # 🌟 記憶喪失対策：保存されている文章と一致するテンプレートを探す
+# 🌟 完璧な同期システム（ここから）
     prompt_list = list(PROMPT_TEMPLATES.keys())
-    default_idx = 0
-    if saved_prompt:
-        for i, key in enumerate(prompt_list):
-            if PROMPT_TEMPLATES[key] == saved_prompt:
-                default_idx = i
-                break
+
+    # 部屋が切り替わった時だけ、Firebaseのデータを読み込む
+    if "last_loaded_prompt" not in st.session_state or st.session_state.last_loaded_prompt != saved_prompt:
+        st.session_state.last_loaded_prompt = saved_prompt
+        # セレクトボックスとテキストエリアの初期状態をセット
+        idx = 0
+        if saved_prompt:
+            for i, k in enumerate(prompt_list):
+                if PROMPT_TEMPLATES[k] == saved_prompt:
+                    idx = i
+                    break
+        st.session_state.prompt_selector = prompt_list[idx]
+        st.session_state.prompt_text = saved_prompt if saved_prompt else PROMPT_TEMPLATES[prompt_list[idx]]
+
+    # セレクトボックスを変更した瞬間に、下のテキストエリアを書き換える魔法の仕組み
+    def sync_prompt():
+        st.session_state.prompt_text = PROMPT_TEMPLATES[st.session_state.prompt_selector]
+
+    # セレクトボックス（変更されたら sync_prompt が発動！）
+    prompt_key = st.selectbox("設定を選択", prompt_list, key="prompt_selector", on_change=sync_prompt)
+
+    # テキストエリア
+    current_system = st.text_area("システム指示の編集", key="prompt_text", height=200)
+    # 🌟 完璧な同期システム（ここまで）
                 
     # 🌟 index=default_idx をつけて、初期位置を固定！
     prompt_key = st.selectbox("設定を選択", prompt_list, index=default_idx)
