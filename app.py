@@ -630,7 +630,7 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
     
-usage = response.usage_metadata
+            usage = response.usage_metadata
             
             # APIからの「リアルタイム明細」を受け取る
             total_prompt = usage.prompt_token_count
