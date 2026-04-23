@@ -474,12 +474,13 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
             )
         )
         
+        # 🚨 ここが消えていたのがエラーの原因でした！ 🚨
         history = []
         for m in st.session_state.messages:
             api_role = "model" if m["role"] == "assistant" else m["role"]
             history.append({"role": api_role, "parts": [m["content"]]})
 
-with st.spinner("思考中..."):
+        with st.spinner("思考中..."):
             safety_settings = {
                 'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
                 'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
@@ -487,22 +488,17 @@ with st.spinner("思考中..."):
                 'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
             }
             
-            # 🌟🌟🌟 【ここからが全自動エコモード追加部分】 🌟🌟🌟
-            # 履歴が短い序盤（15ターン以内）は今まで通り普通に投げる
+            # 🌟🌟🌟 【全自動エコモード追加部分】 🌟🌟🌟
             if len(history) <= 15:
                 response = model.generate_content(history, safety_settings=safety_settings)
             else:
-                # 履歴が長くなってきたら「全自動エコモード（キャッシュ）」発動！
-                # 最新の5ターン「以外」の過去ログを抽出
                 past_history = history[:-5]
                 recent_history = history[-5:]
                 
-                # キャッシュがまだ作られていない場合のみ、新しく作成する
                 if "current_cache_name" not in st.session_state:
                     with st.spinner("📚 過去の記憶をサーバーに固定中...（初回のみ数秒、以降は爆速・激安！）"):
                         import datetime
                         try:
-                            # 4時間で自動消滅する設定（無駄な保管料ゼロ）
                             cache = genai.caching.CachedContent.create(
                                 model=f'models/{model_choice}',
                                 display_name=f'room_cache_{room_id}',
@@ -512,13 +508,10 @@ with st.spinner("思考中..."):
                             )
                             st.session_state.current_cache_name = cache.name
                         except Exception as e:
-                            st.error(f"キャッシュ作成エラー（APIキーの権限等の可能性）: {e}")
-                            # エラー時は安全のため通常送信に切り替え
+                            st.error(f"キャッシュ作成エラー: {e}")
                             response = model.generate_content(history, safety_settings=safety_settings)
 
-                # キャッシュが正常にある場合の処理
                 if "current_cache_name" in st.session_state:
-                    # キャッシュを読み込んだ専用のモデルを生成
                     cached_model = genai.GenerativeModel.from_cached_content(
                         cached_content=st.session_state.current_cache_name,
                         generation_config=genai.types.GenerationConfig(
@@ -527,18 +520,13 @@ with st.spinner("思考中..."):
                             max_output_tokens=max_output
                         )
                     )
-                    
                     try:
-                        # APIに送信するのは「最新の5ターン」だけ！これで料金が劇的に下がります。
                         response = cached_model.generate_content(recent_history, safety_settings=safety_settings)
                     except Exception as e:
-                        # 4時間経ってキャッシュが消滅していた場合などの自動復帰処理
                         st.warning("記憶の固定期間（4時間）が過ぎたため、裏側で再構築しています...少々お待ちください。")
                         del st.session_state.current_cache_name
-                        st.rerun() # リロードしてキャッシュを作り直す
+                        st.rerun()
             # 🌟🌟🌟 【ここまで】 🌟🌟🌟
-            
-            response = model.generate_content(history, safety_settings=safety_settings)
         
             try:
                 reply_text = response.text
