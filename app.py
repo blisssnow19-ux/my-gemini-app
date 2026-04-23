@@ -537,7 +537,10 @@ with st.sidebar:
 
     st.divider()
     st.metric("💸 累計コスト（概算）", f"¥{st.session_state.total_cost_jpy:.2f}")
-    
+
+    # 🌟 この2行を追加（エラーにならないようtry-exceptで囲みます）
+    if "last_new_tokens" in st.session_state:
+        st.caption(f"⏱️ 前回の消費: 新規 {st.session_state.last_new_tokens} T / 記憶 {st.session_state.last_cached_tokens} T")
     if st.button("🔄 データをクラウドから再読み込み"):
         st.rerun()
 
@@ -640,6 +643,8 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
 
             # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」を表示
             st.toast(f"📊 **今回の通信明細**\n・記憶済(無料枠): {cached_tokens} T\n・新規入力: {new_tokens} T\n・AIの返答: {out_tokens} T", icon="✅")
+            st.session_state.last_new_tokens = new_tokens
+            st.session_state.last_cached_tokens = cached_tokens
 
             # 💸 ついでに「累計コスト計算」もキャッシュ割引(約1/4)を適用した正確なものに修正！
             cache_rate = 0.25
