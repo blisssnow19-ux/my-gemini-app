@@ -630,9 +630,22 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
     
-            usage = response.usage_metadata
-            cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
-                    (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+usage = response.usage_metadata
+            
+            # APIからの「リアルタイム明細」を受け取る
+            total_prompt = usage.prompt_token_count
+            cached_tokens = getattr(usage, 'cached_content_token_count', 0)
+            new_tokens = total_prompt - cached_tokens # 今回新しく消費した入力トークン
+            out_tokens = usage.candidates_token_count
+
+            # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」を表示
+            st.toast(f"📊 **今回の通信明細**\n・記憶済(無料枠): {cached_tokens} T\n・新規入力: {new_tokens} T\n・AIの返答: {out_tokens} T", icon="✅")
+
+            # 💸 ついでに「累計コスト計算」もキャッシュ割引(約1/4)を適用した正確なものに修正！
+            cache_rate = 0.25
+            cost = (((new_tokens / 1e6) * PRICING[model_choice]["in"]) + 
+                    ((cached_tokens / 1e6) * PRICING[model_choice]["in"] * cache_rate) +
+                    ((out_tokens / 1e6) * PRICING[model_choice]["out"])) * JPY_RATE
             st.session_state.total_cost_jpy += cost
 
             doc_ref.set({
