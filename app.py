@@ -537,12 +537,9 @@ with st.sidebar:
 
     st.divider()
     st.metric("💸 累計コスト（概算）", f"¥{st.session_state.total_cost_jpy:.2f}")
-
-    # 🌟 この2行を追加（エラーにならないようtry-exceptで囲みます）
+# 🌟 この2行を追加！（入力と返答の文字数にしました）
     if "last_new_tokens" in st.session_state:
-        st.caption(f"⏱️ 前回の消費: 新規 {st.session_state.last_new_tokens} T / 記憶 {st.session_state.last_cached_tokens} T")
-    if st.button("🔄 データをクラウドから再読み込み"):
-        st.rerun()
+        st.caption(f"⏱️ 前回の消費: 入力 {st.session_state.last_new_tokens} T / 返答 {st.session_state.last_out_tokens} T")
 
 # --- メイン画面 ---
 st.info(f"現在の部屋: {room_id} | モード: {prompt_key}")
@@ -586,45 +583,8 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
             }
             
-            # 🌟🌟🌟 【全自動エコモード追加部分】 🌟🌟🌟
-            if len(history) <= 15:
-                response = model.generate_content(history, safety_settings=safety_settings)
-            else:
-                past_history = history[:-5]
-                recent_history = history[-5:]
-                
-                if "current_cache_name" not in st.session_state:
-                    with st.spinner("📚 過去の記憶をサーバーに固定中...（初回のみ数秒、以降は爆速・激安！）"):
-                        import datetime
-                        try:
-                            cache = genai.caching.CachedContent.create(
-                                model=f'models/{model_choice}',
-                                display_name=f'room_cache_{room_id}',
-                                system_instruction=combined_instruction,
-                                contents=past_history,
-                                ttl=datetime.timedelta(hours=4)
-                            )
-                            st.session_state.current_cache_name = cache.name
-                        except Exception as e:
-                            st.error(f"キャッシュ作成エラー: {e}")
-                            response = model.generate_content(history, safety_settings=safety_settings)
-
-                if "current_cache_name" in st.session_state:
-                    cached_model = genai.GenerativeModel.from_cached_content(
-                        cached_content=st.session_state.current_cache_name,
-                        generation_config=genai.types.GenerationConfig(
-                            temperature=1.0,
-                            top_p=0.95,
-                            max_output_tokens=max_output
-                        )
-                    )
-                    try:
-                        response = cached_model.generate_content(recent_history, safety_settings=safety_settings)
-                    except Exception as e:
-                        st.warning("記憶の固定期間（4時間）が過ぎたため、裏側で再構築しています...少々お待ちください。")
-                        del st.session_state.current_cache_name
-                        st.rerun()
-            # 🌟🌟🌟 【ここまで】 🌟🌟🌟
+# 🌟 シンプルな都度払い（キャッシュなし）の呼び出しに戻す
+            response = model.generate_content(history, safety_settings=safety_settings)
         
             try:
                 reply_text = response.text
@@ -635,23 +595,23 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
     
             usage = response.usage_metadata
             
-            # APIからの「リアルタイム明細」を受け取る
+            # --- 🌟 トークンメーター復活ここから ---
+            usage = response.usage_metadata
             total_prompt = usage.prompt_token_count
-            cached_tokens = getattr(usage, 'cached_content_token_count', 0)
-            new_tokens = total_prompt - cached_tokens # 今回新しく消費した入力トークン
             out_tokens = usage.candidates_token_count
 
-            # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」を表示
-            st.toast(f"📊 **今回の通信明細**\n・記憶済(無料枠): {cached_tokens} T\n・新規入力: {new_tokens} T\n・AIの返答: {out_tokens} T", icon="✅")
-            st.session_state.last_new_tokens = new_tokens
-            st.session_state.last_cached_tokens = cached_tokens
+            # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」
+            st.toast(f"📊 **今回の通信明細**\n・入力: {total_prompt} T\n・AIの返答: {out_tokens} T", icon="✅")
+            
+            # サイドバー表示用に保存
+            st.session_state.last_new_tokens = total_prompt
+            st.session_state.last_out_tokens = out_tokens
 
-            # 💸 ついでに「累計コスト計算」もキャッシュ割引(約1/4)を適用した正確なものに修正！
-            cache_rate = 0.25
-            cost = (((new_tokens / 1e6) * PRICING[model_choice]["in"]) + 
-                    ((cached_tokens / 1e6) * PRICING[model_choice]["in"] * cache_rate) +
-                    ((out_tokens / 1e6) * PRICING[model_choice]["out"])) * JPY_RATE
+            # シンプルな都度払いのコスト計算
+            cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
+                    (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
             st.session_state.total_cost_jpy += cost
+            # --- 🌟 トークンメーター復活ここまで ---
 
             doc_ref.set({
                 "messages": st.session_state.messages,
