@@ -452,20 +452,37 @@ with st.sidebar:
     st.divider()
 
     # Firebaseから部屋を取得（ここもサイドバーの中に入れます）
+# --- 📂 部屋の選択（安定版） ---
     try:
         rooms_ref = db.collection("rooms")
-        existing_rooms = [doc.id for doc in rooms_ref.stream()]
+        # 既存の部屋リストを取得して、アルファベット順に並べる
+        existing_rooms = sorted([doc.id for doc in rooms_ref.stream()])
     except:
         existing_rooms = ["room_01"]
+    
     if not existing_rooms:
         existing_rooms = ["room_01"]
 
-    room_mode = st.radio("操作モード", ["既存の部屋に入る", "新しい部屋を作る（新章）"], horizontal=True)
+    # 🌟 keyを設定することで、画面がリロードされても「新しい部屋を作る」モードが維持されます
+    room_mode = st.radio(
+        "操作モード", 
+        ["既存の部屋に入る", "新しい部屋を作る（新章）"], 
+        horizontal=True,
+        key="room_mode_select"
+    )
 
     if room_mode == "既存の部屋に入る":
-        room_id = st.selectbox("入室する部屋を選んでください", existing_rooms)
+        room_id = st.selectbox("入室する部屋を選んでください", existing_rooms, key="existing_room_select")
     else:
-        room_id = st.text_input("新しい部屋の名前", value=f"room_{len(existing_rooms)+1:02d}")
+        # 新しい部屋の名前入力
+        default_name = f"room_{len(existing_rooms) + 1:02d}"
+        room_id = st.text_input("新しい部屋の名前（英数字のみ）", value=default_name, key="new_room_input")
+        
+        # 🚨 名前が空っぽだったり、既存の部屋と同じだったりする場合の警告
+        if not room_id:
+            st.warning("部屋の名前を入力してください。")
+        elif room_id in existing_rooms:
+            st.info("その名前は既に使用されています。メッセージを送ると上書きされます。")
 # --- ①【上】サイドバー：ここまで ---
 
 # --- データの読み込み（部屋が決まったのでクラウドからロード） ---
