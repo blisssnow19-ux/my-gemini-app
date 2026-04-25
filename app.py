@@ -24,6 +24,7 @@ db = firestore.client()
 
 # 2026年最新単価
 PRICING = {
+    "gemini-1.5-pro": {"in": 1.25, "out": 5.00},
     "gemini-3.1-pro-preview": {"in": 2.00, "out": 12.00},
     "gemini-2.5-pro": {"in": 1.25, "out": 10.00}
 }
