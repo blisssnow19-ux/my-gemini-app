@@ -674,22 +674,19 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
             st.session_state.quota_exhausted = False
             st.rerun()
 
+# 🚀 実行とエラー監視（の後半部分）
         except Exception as e:
             error_msg = str(e)
-            # 429（上限）を検知したらフラグを立てる
-            if "429" in error_msg or "ResourceExhausted" in error_msg:
-                st.session_state.quota_exhausted = True
-                st.rerun()
-            else:
-                st.error(f"⚠️ エラーが発生しました: {error_msg}")
+            # 🌟 エラー隠しをやめて、どんなエラーも一旦すべて画面に出す！
+            st.error(f"🔍 真のエラー: {error_msg}")
+            
+            # ↓ 自動リロード機能は一時的にお休み（# で無効化しています）
+            # if "429" in error_msg or "ResourceExhausted" in error_msg:
+            #     st.session_state.quota_exhausted = True
+            #     st.rerun()
+            # else:
+            #     st.error(f"⚠️ エラーが発生しました: {error_msg}")
 
-        except Exception as e:
-            error_msg = str(e)
-            if "429" in error_msg or "ResourceExhausted" in error_msg:
-                st.session_state.quota_exhausted = True
-                st.rerun()
-            else:
-                st.error(f"⚠️ エラーが発生しました: {error_msg}")
 
 # --- 章立て機能 ---
 st.divider()
