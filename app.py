@@ -430,7 +430,10 @@ with st.sidebar:
     free_b = st.text_input("無料キー B", value=st.secrets.get("FREE_B", ""), type="password")
     paid_key = st.text_input("有料キー (Paid)", value=st.secrets.get("paid", ""), type="password")
 
-# 🌟 モード選択（on_changeを追加して、切り替えた瞬間に警告をリセットする）
+if active_key:
+    st.write(f"🔍 デバッグ：現在のキーの冒頭4文字: {active_key[:4]}")
+
+    # 🌟 モード選択（on_changeを追加して、切り替えた瞬間に警告をリセットする）
     def reset_quota_flag():
         st.session_state.quota_exhausted = False
 
