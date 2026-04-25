@@ -8,6 +8,12 @@ import datetime
 # --- 基本設定 ---
 st.set_page_config(page_title="執着密室：シームレス司令室", layout="wide")
 
+# --- 🔑 二刀流（ハイブリッド）APIキー管理の初期化 ---
+if "api_tier" not in st.session_state:
+    st.session_state.api_tier = "free"  # デフォルトは無料枠からスタート
+if "quota_exhausted" not in st.session_state:
+    st.session_state.quota_exhausted = False # エラー検知フラグ
+
 # Firebaseの初期化（一度だけ実行）
 if not firebase_admin._apps:
     key_dict = json.loads(st.secrets["firebase_key"])
@@ -413,14 +419,25 @@ PROMPT_TEMPLATES = {
 }
 
 # --- サイドバー（前半）：部屋の選択 ---
+# --- 🔑 三段構えAPIキー管理 ---
 with st.sidebar:
     st.title("🕯️ 密室管理パネル")
-    default_key = st.secrets.get("GEMINI_API_KEY", "")
-    api_key = st.text_input("Gemini API Key", value=default_key, type="password")
-    
-    st.divider()
-    st.subheader("📂 セーブデータの選択")
+    error_placeholder = st.empty()
 
+    # 3つのキー入力欄
+    free_a = st.text_input("無料キー A", value=st.secrets.get("FREE_A", ""), type="password")
+    free_b = st.text_input("無料キー B", value=st.secrets.get("FREE_B", ""), type="password")
+    paid_key = st.text_input("有料キー (Paid/学習なし)", value=st.secrets.get("paid", ""), type="password")
+
+    # モード選択（手動でも切り替えられるように）
+    mode = st.radio("使用モード", ["無料A", "無料B", "有料(Paid)"], horizontal=True)
+
+    # 🚨 エラー時の自動誘導
+    if st.session_state.get("quota_exhausted", False):
+        with error_placeholder:
+            st.error("⚠️ 現在のキーが上限に達しました。")
+            st.info("他のキーに切り替えて継続してください。")
+            # 切り替え後に quota_exhausted を False に戻す処理が必要
     # Firebaseから「今ある部屋の名前」を全部取得
     try:
         rooms_ref = db.collection("rooms")
@@ -583,45 +600,59 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
             }
             
-# 🌟 シンプルな都度払い（キャッシュなし）の呼び出しに戻す
-            response = model.generate_content(history, safety_settings=safety_settings)
-        
-            try:
-                reply_text = response.text
-            except ValueError:
-                reply_text = "【システム通知】AIが言葉に詰まって沈黙しました。（過激な展開としてフィルターにブロックされたか、設定が複雑すぎてフリーズしました）。左のサイドバーから「最後の返答を取り消す」を押して、少しマイルドな言葉をかけ直してみてください。"
-        
-            st.session_state.messages.append({"role": "assistant", "content": reply_text})
-    
-            usage = response.usage_metadata
-            
-            # --- 🌟 トークンメーター復活ここから ---
-            usage = response.usage_metadata
-            total_prompt = usage.prompt_token_count
-            out_tokens = usage.candidates_token_count
+# 🌟 429エラー（無料枠上限）を監視するために全体を try で囲む
+try:
+    # 🌟 シンプルな都度払い（キャッシュなし）の呼び出しに戻す
+    response = model.generate_content(history, safety_settings=safety_settings)
 
-            # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」
-            st.toast(f"📊 **今回の通信明細**\n・入力: {total_prompt} T\n・AIの返答: {out_tokens} T", icon="✅")
-            
-            # サイドバー表示用に保存
-            st.session_state.last_new_tokens = total_prompt
-            st.session_state.last_out_tokens = out_tokens
+    try:
+        reply_text = response.text
+    except ValueError:
+        reply_text = "【システム通知】AIが言葉に詰まって沈黙しました。（過激な展開としてフィルターにブロックされたか、設定が複雑すぎてフリーズしました）。左のサイドバーから「最後の返答を取り消す」を押して、少しマイルドな言葉をかけ直してみてください。"
 
-            # シンプルな都度払いのコスト計算
-            cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
-                    (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
-            st.session_state.total_cost_jpy += cost
-            # --- 🌟 トークンメーター復活ここまで ---
+    st.session_state.messages.append({"role": "assistant", "content": reply_text})
 
-            doc_ref.set({
-                "messages": st.session_state.messages,
-                "total_cost": st.session_state.total_cost_jpy,
-                "system_prompt": current_system,
-                "appearance": snow_appearance,
-                "model_choice": model_choice,
-                "last_update": datetime.datetime.now()
-            })
-            st.rerun()
+    # --- 🌟 トークンメーター復活ここから ---
+    usage = response.usage_metadata
+    total_prompt = usage.prompt_token_count
+    out_tokens = usage.candidates_token_count
+
+    # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」
+    st.toast(f"📊 **今回の通信明細**\n・入力: {total_prompt} T\n・AIの返答: {out_tokens} T", icon="✅")
+
+    # サイドバー表示用に保存
+    st.session_state.last_new_tokens = total_prompt
+    st.session_state.last_out_tokens = out_tokens
+
+    # 💰 コスト計算（※「有料枠」で動いている時だけ加算する！）
+    if st.session_state.api_tier == "paid":
+        cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
+                (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+        st.session_state.total_cost_jpy += cost
+    # --- 🌟 トークンメーター復活ここまで ---
+
+    doc_ref.set({
+        "messages": st.session_state.messages,
+        "total_cost": st.session_state.total_cost_jpy,
+        "system_prompt": current_system,
+        "appearance": snow_appearance,
+        "model_choice": model_choice,
+        "last_update": datetime.datetime.now()
+    })
+    st.rerun()
+
+# 🚨 ここでエラーを待ち構える！
+except Exception as e:
+    error_msg = str(e)
+    # 429エラー（リソース不足）が含まれていたら
+    if "429" in error_msg or "ResourceExhausted" in error_msg or "quota" in error_msg.lower():
+        # エラーフラグを立てて即座に画面をリロード
+        # → サイドバーの最上部に「無料枠上限！」の警告と切り替えボタンが出現します
+        st.session_state.quota_exhausted = True
+        st.rerun() 
+    else:
+        # その他の予期せぬエラーはそのまま表示
+        st.error(f"⚠️ 予期せぬシステムエラー: {error_msg}")
 
 # --- 章立て機能 ---
 st.divider()
