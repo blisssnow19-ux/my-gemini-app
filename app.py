@@ -430,10 +430,16 @@ with st.sidebar:
     free_b = st.text_input("無料キー B", value=st.secrets.get("FREE_B", ""), type="password")
     paid_key = st.text_input("有料キー (Paid)", value=st.secrets.get("paid", ""), type="password")
 
-    # モード選択
-    mode = st.radio("使用モード", ["無料A", "無料B", "有料(Paid)"], horizontal=True)
-    tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
-    st.session_state.api_tier = tier_map[mode]
+# 🌟 モード選択（on_changeを追加して、切り替えた瞬間に警告をリセットする）
+    def reset_quota_flag():
+        st.session_state.quota_exhausted = False
+
+    mode = st.radio(
+        "使用モード", 
+        ["無料A", "無料B", "有料(Paid)"], 
+        horizontal=True,
+        on_change=reset_quota_flag  # ← これを追加！
+    )
 
     # アクティブな鍵の決定
     if st.session_state.api_tier == "free_a":
