@@ -603,8 +603,16 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         )
 
         # 🚀 実行とエラー監視
-        try:
-            response = model.generate_content(st.session_state.messages)
+            try:
+            # 🌟 Gemini専用の形式（roleとparts）に変換
+            history_for_gemini = []
+            for m in st.session_state.messages:
+                # assistant を model に、content を parts に詰め替える
+                role = "model" if m["role"] == "assistant" else "user"
+                history_for_gemini.append({"role": role, "parts": [m["content"]]})
+
+            # 🌟 変換した履歴をAIに送る
+            response = model.generate_content(history_for_gemini)
             try:
                 reply_text = response.text
             except ValueError:
