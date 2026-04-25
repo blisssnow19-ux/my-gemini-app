@@ -443,7 +443,7 @@ with st.sidebar:
     else:
         active_key = paid_key
 
-    # 🚨 エラー検知時の表示（ここが warning の場所！）
+    # 🚨 エラー検知時の表示
     if st.session_state.get("quota_exhausted", False):
         with error_placeholder:
             st.error("⚠️ 無料枠の上限に達しました。")
@@ -580,55 +580,48 @@ for msg in st.session_state.messages:
 
 # 入力
 # 入力
+# --- 🚀 送信処理：三段構え（トリプル・バレル）エンジン ---
 if prompt := st.chat_input("密室に言葉を投げ入れる..."):
-    # active_key（サイドバーで選ばれた鍵）があるかチェック
+    # サイドバーで決まった active_key があるか確認
     if not active_key:
-        st.error("API Keyを入力してください（サイドバーで設定できます）")
+        st.error("APIキーが設定されていません。サイドバーを確認してください。")
     else:
+        # ユーザーの入力を履歴に追加
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # 🌟 システム指示と「最新の」外見メモを合体させる
+        # 🌟 システム指示と最新の外見メモを合体
         combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{snow_appearance}"
 
-        # 🚀 1. まず model を定義する（ここで定義するので、サイドバーでの重複定義は不要です！）
+        # 🚀 AIの構成
+        genai.configure(api_key=active_key)
         model = genai.GenerativeModel(
             model_name=model_choice,
             system_instruction=combined_instruction,
             generation_config=genai.types.GenerationConfig(
-                temperature=1.0,
-                top_p=0.95,
-                max_output_tokens=max_output
+                temperature=1.0, top_p=0.95, max_output_tokens=max_output
             )
         )
 
-        # 🚀 2. ここから三段構えのエラー監視（try-except）を開始
+        # 🚀 実行とエラー監視
         try:
-            # 会話履歴をAIに投げる（ここでは history 形式を使っていると想定）
-            # もし history 変数がない場合は、以前のコードに合わせて調整してください
             response = model.generate_content(st.session_state.messages)
-
             try:
                 reply_text = response.text
             except ValueError:
-                reply_text = "【システム通知】AIが沈黙しました。フィルターに触れたか、設定が複雑すぎます。少しマイルドな言葉でやり直してください。"
+                reply_text = "【システム通知】AIが沈黙しました。"
 
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
 
-            # --- 📊 トークン計算とコスト加算 ---
+            # 📊 トークン計算とコスト処理
             usage = response.usage_metadata
-            total_prompt = usage.prompt_token_count
-            out_tokens = usage.candidates_token_count
-            
-            # 右下にスッと消える通知（今のTierを表示）
             st.toast(f"📊 通信完了 (Tier: {st.session_state.api_tier})", icon="✅")
 
-            # 💰 有料モード（paid）の時だけコストを加算する
             if st.session_state.api_tier == "paid":
-                cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
-                        (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+                cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
+                        (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
                 st.session_state.total_cost_jpy += cost
 
-            # Firebase保存（全てのデータを一括更新）
+            # 💾 Firebase保存
             doc_ref.set({
                 "messages": st.session_state.messages,
                 "total_cost": st.session_state.total_cost_jpy,
@@ -638,33 +631,16 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 "last_update": datetime.datetime.now()
             })
             
-            # 正常に終わったらエラーフラグを折って画面更新
             st.session_state.quota_exhausted = False
             st.rerun()
 
-        # 🚨 429（無料枠上限）を検知した場合
         except Exception as e:
             error_msg = str(e)
             if "429" in error_msg or "ResourceExhausted" in error_msg:
-                # エラーフラグを立ててリロード（サイドバーに警告が出ます）
                 st.session_state.quota_exhausted = True
                 st.rerun()
             else:
-                # その他のエラーは赤文字で表示
-                st.error(f"⚠️ システムエラー: {error_msg}")
-
-# 🚨 ここでエラーを待ち構える！
-except Exception as e:
-    error_msg = str(e)
-    # 429エラー（リソース不足）が含まれていたら
-    if "429" in error_msg or "ResourceExhausted" in error_msg or "quota" in error_msg.lower():
-        # エラーフラグを立てて即座に画面をリロード
-        # → サイドバーの最上部に「無料枠上限！」の警告と切り替えボタンが出現します
-        st.session_state.quota_exhausted = True
-        st.rerun() 
-    else:
-        # その他の予期せぬエラーはそのまま表示
-        st.error(f"⚠️ 予期せぬシステムエラー: {error_msg}")
+                st.error(f"⚠️ エラーが発生しました: {error_msg}")
 
 # --- 章立て機能 ---
 st.divider()
