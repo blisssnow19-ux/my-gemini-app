@@ -420,71 +420,53 @@ PROMPT_TEMPLATES = {
 
 # --- サイドバー（前半）：部屋の選択 ---
 # --- 🔑 三段構えAPIキー管理 ---
+# --- ①【上】サイドバー（APIキー ＆ 部屋選択）：ここから ---
 with st.sidebar:
     st.title("🕯️ 密室管理パネル")
     error_placeholder = st.empty()
 
-    # 3つのキー入力欄
+    # APIキー入力（Secretsから自動取得）
     free_a = st.text_input("無料キー A", value=st.secrets.get("FREE_A", ""), type="password")
     free_b = st.text_input("無料キー B", value=st.secrets.get("FREE_B", ""), type="password")
-    paid_key = st.text_input("有料キー (Paid/学習なし)", value=st.secrets.get("paid", ""), type="password")
+    paid_key = st.text_input("有料キー (Paid)", value=st.secrets.get("paid", ""), type="password")
 
-    # モード選択（手動でも切り替えられるように）
+    # モード選択
     mode = st.radio("使用モード", ["無料A", "無料B", "有料(Paid)"], horizontal=True)
+    tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
+    st.session_state.api_tier = tier_map[mode]
 
-    # 🚨 エラー時の自動誘導
+    # アクティブな鍵の決定
+    if st.session_state.api_tier == "free_a":
+        active_key = free_a
+    elif st.session_state.api_tier == "free_b":
+        active_key = free_b
+    else:
+        active_key = paid_key
+
+    # 🚨 エラー検知時の表示（ここが warning の場所！）
     if st.session_state.get("quota_exhausted", False):
         with error_placeholder:
-            st.error("⚠️ 現在のキーが上限に達しました。")
-            st.info("他のキーに切り替えて継続してください。")
-            # 切り替え後に quota_exhausted を False に戻す処理が必要
-    # Firebaseから「今ある部屋の名前」を全部取得
+            st.error("⚠️ 無料枠の上限に達しました。")
+            st.warning("他のキーに切り替えてください。")
+
+    st.divider()
+
+    # Firebaseから部屋を取得（ここもサイドバーの中に入れます）
     try:
         rooms_ref = db.collection("rooms")
         existing_rooms = [doc.id for doc in rooms_ref.stream()]
     except:
-        existing_rooms = []
-        
+        existing_rooms = ["room_01"]
     if not existing_rooms:
-        existing_rooms = ["room_01"] # 最初は仮の名前を入れておく
+        existing_rooms = ["room_01"]
 
-    # 「既存の部屋」か「新しい部屋」かを選ぶ
     room_mode = st.radio("操作モード", ["既存の部屋に入る", "新しい部屋を作る（新章）"], horizontal=True)
 
-# モード選択（手動でも切り替えられるように）
-    mode = st.radio("使用モード", ["無料A", "無料B", "有料(Paid)"], horizontal=True)
-
-    # --- 🚀 【ここから追加】：アクティブなキーの決定とAPI設定 ---
-    # 1. 選択されたモードをセッションに保存
-    tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
-    st.session_state.api_tier = tier_map[mode]
-
-    # 2. 稼働ステータスの表示とキーの選択
-    if st.session_state.api_tier == "free_a":
-        active_key = free_a
-        st.success("🟢 稼働中：無料A")
-    elif st.session_state.api_tier == "free_b":
-        active_key = free_b
-        st.info("🔵 稼働中：無料B")
-    else:
-        active_key = paid_key
-        st.warning("💰 稼働中：有料(Paid)")
-
-    # 3. APIキーをシステムにセット
-    if active_key:
-        genai.configure(api_key=active_key)
-    else:
-        st.warning("APIキーを設定してください。")
-    # --- 【追加ここまで】 ---
-
-    # 🚨 エラー時の自動誘導（ここは元からあるコードですね）
-    if st.session_state.get("quota_exhausted", False):
-        # ...（以下、スノウさんの既存のFirebase処理へ続く）
-    
     if room_mode == "既存の部屋に入る":
         room_id = st.selectbox("入室する部屋を選んでください", existing_rooms)
     else:
-        room_id = st.text_input("新しい部屋の名前（英数字おすすめ）", value=f"room_{len(existing_rooms)+1:02d}")
+        room_id = st.text_input("新しい部屋の名前", value=f"room_{len(existing_rooms)+1:02d}")
+# --- ①【上】サイドバー：ここまで ---
 
 # --- データの読み込み（部屋が決まったのでクラウドからロード） ---
 doc_ref = db.collection("rooms").document(room_id)
