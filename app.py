@@ -430,9 +430,17 @@ with st.sidebar:
     free_b = st.text_input("無料キー B", value=st.secrets.get("FREE_B", ""), type="password")
     paid_key = st.text_input("有料キー (Paid)", value=st.secrets.get("paid", ""), type="password")
 
-    # 🌟 モード選択（on_changeを追加して、切り替えた瞬間に警告をリセットする）
-    def reset_quota_flag():
+# 🌟 モード選択（切り替えた瞬間にエラーフラグをリセットする仕掛け）
+    def on_mode_change():
         st.session_state.quota_exhausted = False
+
+    mode_label = st.radio(
+        "使用モード", 
+        ["無料A", "無料B", "有料(Paid)"], 
+        horizontal=True,
+        on_change=on_mode_change, # ← これが「記憶を消す」スイッチです
+        key="selected_mode_label" 
+    )
 
 # 1. モード選択（ラジオボタン）
     # 🌟 keyを設定することで、選択した瞬間に session_state に保存されるようにします
@@ -618,18 +626,18 @@ for msg in st.session_state.messages:
 # 入力
 # 入力
 # --- 🚀 送信処理：三段構え（トリプル・バレル）エンジン ---
+# --- 🚀 送信処理：完全版（翻訳 ＆ 切り替え ＆ エラー監視） ---
 if prompt := st.chat_input("密室に言葉を投げ入れる..."):
-    # サイドバーで決まった active_key があるか確認
     if not active_key:
         st.error("APIキーが設定されていません。サイドバーを確認してください。")
     else:
         # ユーザーの入力を履歴に追加
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # 🌟 システム指示と最新の外見メモを合体
+        # システム指示と最新の外見メモを合体
         combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{snow_appearance}"
 
-        # 🚀 AIの構成
+        # AIの構成
         genai.configure(api_key=active_key)
         model = genai.GenerativeModel(
             model_name=model_choice,
@@ -641,15 +649,16 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
 
         # 🚀 実行とエラー監視
         try:
-            # 🌟 Gemini専用の形式（roleとparts）に変換
+            # 🌟 【重要】Gemini専用の形式（parts）に翻訳
+            # これがないと「Unable to determine...」という元のエラーになります
             history_for_gemini = []
             for m in st.session_state.messages:
-                # assistant を model に、content を parts に詰め替える
                 role = "model" if m["role"] == "assistant" else "user"
                 history_for_gemini.append({"role": role, "parts": [m["content"]]})
 
-            # 🌟 変換した履歴をAIに送る
+            # 翻訳した履歴をAIに送る
             response = model.generate_content(history_for_gemini)
+
             try:
                 reply_text = response.text
             except ValueError:
@@ -657,16 +666,10 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
 
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
 
-            # 📊 トークン計算とコスト処理
-            usage = response.usage_metadata
+            # 通信成功の通知（出た瞬間に、切り替えを促す黄色い箱が消えるはずです）
             st.toast(f"📊 通信完了 (Tier: {st.session_state.api_tier})", icon="✅")
 
-            if st.session_state.api_tier == "paid":
-                cost = ((usage.prompt_token_count / 1e6) * PRICING[model_choice]["in"] + 
-                        (usage.candidates_token_count / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
-                st.session_state.total_cost_jpy += cost
-
-            # 💾 Firebase保存
+            # Firebase保存
             doc_ref.set({
                 "messages": st.session_state.messages,
                 "total_cost": st.session_state.total_cost_jpy,
@@ -676,8 +679,18 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 "last_update": datetime.datetime.now()
             })
             
+            # 正常に返答が来たら、上限エラーのフラグを折る！
             st.session_state.quota_exhausted = False
             st.rerun()
+
+        except Exception as e:
+            error_msg = str(e)
+            # 429（上限）を検知したらフラグを立てる
+            if "429" in error_msg or "ResourceExhausted" in error_msg:
+                st.session_state.quota_exhausted = True
+                st.rerun()
+            else:
+                st.error(f"⚠️ エラーが発生しました: {error_msg}")
 
         except Exception as e:
             error_msg = str(e)
