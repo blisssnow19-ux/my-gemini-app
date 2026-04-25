@@ -434,14 +434,22 @@ with st.sidebar:
     def reset_quota_flag():
         st.session_state.quota_exhausted = False
 
-    mode = st.radio(
+# 1. モード選択（ラジオボタン）
+    # 🌟 keyを設定することで、選択した瞬間に session_state に保存されるようにします
+    mode_label = st.radio(
         "使用モード", 
         ["無料A", "無料B", "有料(Paid)"], 
         horizontal=True,
-        on_change=reset_quota_flag  # ← これを追加！
+        key="selected_mode_label" 
     )
 
-    # アクティブな鍵の決定
+    # 2. ラベルをプログラム用の名前に変換して st.session_state.api_tier を更新
+    # 🌟 ここが抜けているか、順番が違うと切り替わりません！
+    tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
+    st.session_state.api_tier = tier_map[mode_label]
+
+    # 3. アクティブな鍵の決定
+    # 🌟 ここで更新されたばかりの api_tier を使って鍵を選びます
     if st.session_state.api_tier == "free_a":
         active_key = free_a
     elif st.session_state.api_tier == "free_b":
@@ -449,8 +457,11 @@ with st.sidebar:
     else:
         active_key = paid_key
 
+    # 4. デバッグ表示（Key確認）
     if active_key:
-        st.caption(f"🔍 Key確認: {active_key[:8]}***") 
+        st.caption(f"🔍 現在のKey（冒頭）: {active_key[:8]}***")
+    else:
+        st.error("⚠️ キーが空っぽです！")
     else:
         st.error("⚠️ キーが空っぽです！")
 
