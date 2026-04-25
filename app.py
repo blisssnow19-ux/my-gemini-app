@@ -442,15 +442,6 @@ with st.sidebar:
         key="selected_mode_label" 
     )
 
-# 1. モード選択（ラジオボタン）
-    # 🌟 keyを設定することで、選択した瞬間に session_state に保存されるようにします
-    mode_label = st.radio(
-        "使用モード", 
-        ["無料A", "無料B", "有料(Paid)"], 
-        horizontal=True,
-        key="selected_mode_label" 
-    )
-
     # 2. ラベルをプログラム用の名前に変換して st.session_state.api_tier を更新
     # 🌟 ここが抜けているか、順番が違うと切り替わりません！
     tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
