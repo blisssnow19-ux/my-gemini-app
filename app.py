@@ -462,8 +462,6 @@ with st.sidebar:
         st.caption(f"🔍 現在のKey（冒頭）: {active_key[:8]}***")
     else:
         st.error("⚠️ キーが空っぽです！")
-    else:
-        st.error("⚠️ キーが空っぽです！")
 
     # 🚨 エラー検知時の表示
     if st.session_state.get("quota_exhausted", False):
