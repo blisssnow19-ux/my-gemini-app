@@ -603,7 +603,7 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
         )
 
         # 🚀 実行とエラー監視
-            try:
+        try:
             # 🌟 Gemini専用の形式（roleとparts）に変換
             history_for_gemini = []
             for m in st.session_state.messages:
