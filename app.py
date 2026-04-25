@@ -451,6 +451,36 @@ with st.sidebar:
     # 「既存の部屋」か「新しい部屋」かを選ぶ
     room_mode = st.radio("操作モード", ["既存の部屋に入る", "新しい部屋を作る（新章）"], horizontal=True)
 
+# モード選択（手動でも切り替えられるように）
+    mode = st.radio("使用モード", ["無料A", "無料B", "有料(Paid)"], horizontal=True)
+
+    # --- 🚀 【ここから追加】：アクティブなキーの決定とAPI設定 ---
+    # 1. 選択されたモードをセッションに保存
+    tier_map = {"無料A": "free_a", "無料B": "free_b", "有料(Paid)": "paid"}
+    st.session_state.api_tier = tier_map[mode]
+
+    # 2. 稼働ステータスの表示とキーの選択
+    if st.session_state.api_tier == "free_a":
+        active_key = free_a
+        st.success("🟢 稼働中：無料A")
+    elif st.session_state.api_tier == "free_b":
+        active_key = free_b
+        st.info("🔵 稼働中：無料B")
+    else:
+        active_key = paid_key
+        st.warning("💰 稼働中：有料(Paid)")
+
+    # 3. APIキーをシステムにセット
+    if active_key:
+        genai.configure(api_key=active_key)
+    else:
+        st.warning("APIキーを設定してください。")
+    # --- 【追加ここまで】 ---
+
+    # 🚨 エラー時の自動誘導（ここは元からあるコードですね）
+    if st.session_state.get("quota_exhausted", False):
+        # ...（以下、スノウさんの既存のFirebase処理へ続く）
+    
     if room_mode == "既存の部屋に入る":
         room_id = st.selectbox("入室する部屋を選んでください", existing_rooms)
     else:
@@ -567,15 +597,18 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # 入力
+# 入力
 if prompt := st.chat_input("密室に言葉を投げ入れる..."):
-    if not api_key:
-        st.error("API Keyを入力してください")
+    # active_key（サイドバーで選ばれた鍵）があるかチェック
+    if not active_key:
+        st.error("API Keyを入力してください（サイドバーで設定できます）")
     else:
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # 🌟 システム指示と「最新の」外見メモを合体させる！
+        # 🌟 システム指示と「最新の」外見メモを合体させる
         combined_instruction = f"{current_system}\n\n【重要：現在のスノウの外見・物理的状況】\n{snow_appearance}"
 
+        # 🚀 1. まず model を定義する（ここで定義するので、サイドバーでの重複定義は不要です！）
         model = genai.GenerativeModel(
             model_name=model_choice,
             system_instruction=combined_instruction,
@@ -585,61 +618,58 @@ if prompt := st.chat_input("密室に言葉を投げ入れる..."):
                 max_output_tokens=max_output
             )
         )
-        
-        # 🚨 ここが消えていたのがエラーの原因でした！ 🚨
-        history = []
-        for m in st.session_state.messages:
-            api_role = "model" if m["role"] == "assistant" else m["role"]
-            history.append({"role": api_role, "parts": [m["content"]]})
 
-        with st.spinner("思考中..."):
-            safety_settings = {
-                'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
-                'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
-                'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
-                'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
-            }
+        # 🚀 2. ここから三段構えのエラー監視（try-except）を開始
+        try:
+            # 会話履歴をAIに投げる（ここでは history 形式を使っていると想定）
+            # もし history 変数がない場合は、以前のコードに合わせて調整してください
+            response = model.generate_content(st.session_state.messages)
+
+            try:
+                reply_text = response.text
+            except ValueError:
+                reply_text = "【システム通知】AIが沈黙しました。フィルターに触れたか、設定が複雑すぎます。少しマイルドな言葉でやり直してください。"
+
+            st.session_state.messages.append({"role": "assistant", "content": reply_text})
+
+            # --- 📊 トークン計算とコスト加算 ---
+            usage = response.usage_metadata
+            total_prompt = usage.prompt_token_count
+            out_tokens = usage.candidates_token_count
             
-# 🌟 429エラー（無料枠上限）を監視するために全体を try で囲む
-try:
-    # 🌟 シンプルな都度払い（キャッシュなし）の呼び出しに戻す
-    response = model.generate_content(history, safety_settings=safety_settings)
+            # 右下にスッと消える通知（今のTierを表示）
+            st.toast(f"📊 通信完了 (Tier: {st.session_state.api_tier})", icon="✅")
 
-    try:
-        reply_text = response.text
-    except ValueError:
-        reply_text = "【システム通知】AIが言葉に詰まって沈黙しました。（過激な展開としてフィルターにブロックされたか、設定が複雑すぎてフリーズしました）。左のサイドバーから「最後の返答を取り消す」を押して、少しマイルドな言葉をかけ直してみてください。"
+            # 💰 有料モード（paid）の時だけコストを加算する
+            if st.session_state.api_tier == "paid":
+                cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
+                        (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
+                st.session_state.total_cost_jpy += cost
 
-    st.session_state.messages.append({"role": "assistant", "content": reply_text})
+            # Firebase保存（全てのデータを一括更新）
+            doc_ref.set({
+                "messages": st.session_state.messages,
+                "total_cost": st.session_state.total_cost_jpy,
+                "system_prompt": current_system,
+                "appearance": snow_appearance,
+                "model_choice": model_choice,
+                "last_update": datetime.datetime.now()
+            })
+            
+            # 正常に終わったらエラーフラグを折って画面更新
+            st.session_state.quota_exhausted = False
+            st.rerun()
 
-    # --- 🌟 トークンメーター復活ここから ---
-    usage = response.usage_metadata
-    total_prompt = usage.prompt_token_count
-    out_tokens = usage.candidates_token_count
-
-    # 🌟 画面右下にスッと消える「リアルタイム通知（トースト）」
-    st.toast(f"📊 **今回の通信明細**\n・入力: {total_prompt} T\n・AIの返答: {out_tokens} T", icon="✅")
-
-    # サイドバー表示用に保存
-    st.session_state.last_new_tokens = total_prompt
-    st.session_state.last_out_tokens = out_tokens
-
-    # 💰 コスト計算（※「有料枠」で動いている時だけ加算する！）
-    if st.session_state.api_tier == "paid":
-        cost = ((total_prompt / 1e6) * PRICING[model_choice]["in"] + 
-                (out_tokens / 1e6) * PRICING[model_choice]["out"]) * JPY_RATE
-        st.session_state.total_cost_jpy += cost
-    # --- 🌟 トークンメーター復活ここまで ---
-
-    doc_ref.set({
-        "messages": st.session_state.messages,
-        "total_cost": st.session_state.total_cost_jpy,
-        "system_prompt": current_system,
-        "appearance": snow_appearance,
-        "model_choice": model_choice,
-        "last_update": datetime.datetime.now()
-    })
-    st.rerun()
+        # 🚨 429（無料枠上限）を検知した場合
+        except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg or "ResourceExhausted" in error_msg:
+                # エラーフラグを立ててリロード（サイドバーに警告が出ます）
+                st.session_state.quota_exhausted = True
+                st.rerun()
+            else:
+                # その他のエラーは赤文字で表示
+                st.error(f"⚠️ システムエラー: {error_msg}")
 
 # 🚨 ここでエラーを待ち構える！
 except Exception as e:
